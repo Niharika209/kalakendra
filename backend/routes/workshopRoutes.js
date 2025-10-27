@@ -1,13 +1,28 @@
 import express from "express";
-import { createWorkshop, getAllWorkshops } from "../controllers/workshopController.js";
+import { 
+  createWorkshop, 
+  getAllWorkshops, 
+  getWorkshopById, 
+  updateWorkshop, 
+  deleteWorkshop 
+} from "../controllers/workshopController.js";
 import { artistAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Create workshop (requires artist auth)
+// CREATE - Create workshop (requires artist auth)
 router.post("/", artistAuth, createWorkshop);
 
-// Get all workshops
+// READ - Get all workshops
 router.get("/", getAllWorkshops);
+
+// READ - Get single workshop by ID
+router.get("/:id", getWorkshopById);
+
+// UPDATE - Update workshop
+router.put("/:id", updateWorkshop);
+
+// DELETE - Delete workshop
+router.delete("/:id", deleteWorkshop);
 
 export default router;
