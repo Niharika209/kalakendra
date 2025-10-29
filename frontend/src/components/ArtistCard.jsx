@@ -15,7 +15,7 @@ function ArtistCard({ artist, index }) {
           />
           <div className="absolute inset-0 bg-linear-to-t from-amber-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out"></div>
         </div>
-        <div className="p-5 bg-gradient-to-b from-white to-amber-50">
+        <div className="p-5 bg-linear-to-b from-white to-amber-50">
           <h3 className="font-serif font-bold text-amber-900 mb-1 group-hover:text-yellow-600 transition-all duration-300 ease-out">
             {artist.name}
           </h3>

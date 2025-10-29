@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import priyaImage from '../assets/priya.png'
 
 // Mock artist data
 const mockArtist = {
@@ -13,7 +15,7 @@ const mockArtist = {
   experience: 15,
   students: 250,
   hourlyRate: 1500,
-  image: null,
+  image: priyaImage,
   about: "I am a passionate classical dancer with over 15 years of experience in Bharatanatyam and Kathak. My teaching philosophy focuses on preserving traditional techniques while encouraging creative expression. I have trained students of all ages and have performed at numerous national and international venues.",
   specialties: ["Bharatanatyam", "Kathak", "Folk Dance", "Choreography"],
   workshops: [
@@ -45,6 +47,29 @@ const mockArtist = {
       price: 1800
     }
   ],
+  videos: [
+    {
+      id: 1,
+      title: "Bharatanatyam Performance",
+      thumbnail: "https://via.placeholder.com/300x200",
+      duration: "5:30",
+      views: 1200
+    },
+    {
+      id: 2,
+      title: "Kathak Tutorial - Basic Steps",
+      thumbnail: "https://via.placeholder.com/300x200",
+      duration: "12:45",
+      views: 850
+    },
+    {
+      id: 3,
+      title: "Folk Dance Showcase",
+      thumbnail: "https://via.placeholder.com/300x200",
+      duration: "8:20",
+      views: 920
+    }
+  ],
   testimonials: [
     {
       name: "Anjali Verma",
@@ -65,8 +90,20 @@ const mockArtist = {
 }
 
 function ArtistProfilePage() {
+  const navigate = useNavigate()
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const [activeTab, setActiveTab] = useState('workshops') // New state for tabs
   const artist = mockArtist
+
+  const handleBookSession = () => {
+    setActiveTab('workshops')
+    setTimeout(() => {
+      const tabsSection = document.getElementById('tabs-section')
+      if (tabsSection) {
+        tabsSection.scrollIntoView({ behavior: 'smooth' })
+      }
+    }, 100)
+  }
 
   return (
     <>
@@ -85,7 +122,9 @@ function ArtistProfilePage() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <button className="w-full bg-amber-600 hover:bg-amber-700 text-white mb-3 px-4 py-2 rounded-md font-medium transition-colors">
+                <button 
+                  onClick={handleBookSession}
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white mb-3 px-4 py-2 rounded-md font-medium transition-colors">
                   Book a Session
                 </button>
                 <button
@@ -168,12 +207,6 @@ function ArtistProfilePage() {
                   </svg>
                   <span className="text-amber-900">{artist.location}</span>
                 </div>
-                <button className="border border-amber-300 text-amber-900 hover:bg-amber-50 bg-transparent px-4 py-2 rounded-md">
-                  <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  Message
-                </button>
               </div>
 
               {/* About */}
@@ -196,48 +229,120 @@ function ArtistProfilePage() {
             </div>
           </div>
 
-          {/* Workshops */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-amber-900 mb-6">Upcoming Workshops</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {artist.workshops.map((workshop) => (
-                <div key={workshop.id} className="p-6 border border-amber-100 rounded-lg bg-white hover:shadow-lg transition-shadow">
-                  <h3 className="text-lg font-bold text-amber-900 mb-3">{workshop.title}</h3>
-                  <div className="space-y-2 mb-4 text-sm text-amber-700">
-                    <p>📅 {new Date(workshop.date).toLocaleDateString()}</p>
-                    <p>🕐 {workshop.time}</p>
-                    <p>⏱️ {workshop.duration}</p>
-                    <p>👥 {workshop.enrolled} enrolled</p>
-                  </div>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-2xl font-bold text-amber-600">₹{workshop.price}</span>
-                  </div>
-                  <button className="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md font-medium transition-colors">
-                    Enroll Now
-                  </button>
-                </div>
-              ))}
+          {/* Tabs Navigation */}
+          <div id="tabs-section" className="mb-12">
+            <div className="flex justify-around border-b border-amber-200 mb-8">
+              <button
+                onClick={() => setActiveTab('videos')}
+                className={`pb-4 px-6 font-semibold transition-all ${
+                  activeTab === 'videos'
+                    ? 'border-b-2 border-yellow-500 text-amber-900'
+                    : 'text-amber-600 hover:text-amber-900'
+                }`}
+              >
+                Videos
+              </button>
+              <button
+                onClick={() => setActiveTab('testimonials')}
+                className={`pb-4 px-6 font-semibold transition-all ${
+                  activeTab === 'testimonials'
+                    ? 'border-b-2 border-yellow-500 text-amber-900'
+                    : 'text-amber-600 hover:text-amber-900'
+                }`}
+              >
+                Testimonials
+              </button>
+              <button
+                onClick={() => setActiveTab('workshops')}
+                className={`pb-4 px-6 font-semibold transition-all ${
+                  activeTab === 'workshops'
+                    ? 'border-b-2 border-yellow-500 text-amber-900'
+                    : 'text-amber-600 hover:text-amber-900'
+                }`}
+              >
+                Workshops
+              </button>
             </div>
-          </div>
 
-          {/* Testimonials */}
-          <div>
-            <h2 className="text-2xl font-bold text-amber-900 mb-6">Student Testimonials</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {artist.testimonials.map((testimonial, idx) => (
-                <div key={idx} className="p-6 border border-amber-100 rounded-lg bg-white">
-                  <div className="flex items-center gap-1 mb-3">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <svg key={i} className="w-4 h-4 fill-amber-500 text-amber-500" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <p className="text-amber-800 mb-4 italic">"{testimonial.text}"</p>
-                  <p className="font-semibold text-amber-900">- {testimonial.name}</p>
+            {/* Workshops Tab */}
+            {activeTab === 'workshops' && (
+              <div>
+                <h2 className="text-2xl font-bold text-amber-900 mb-6">Upcoming Workshops</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {artist.workshops.map((workshop) => (
+                    <div key={workshop.id} className="p-6 border border-amber-100 rounded-lg bg-white hover:shadow-lg transition-shadow">
+                      <h3 className="text-lg font-bold text-amber-900 mb-3">{workshop.title}</h3>
+                      <div className="space-y-2 mb-4 text-sm text-amber-700">
+                        <p>📅 {new Date(workshop.date).toLocaleDateString()}</p>
+                        <p>🕐 {workshop.time}</p>
+                        <p>⏱️ {workshop.duration}</p>
+                        <p>👥 {workshop.enrolled} enrolled</p>
+                      </div>
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-2xl font-bold text-amber-600">₹{workshop.price}</span>
+                      </div>
+                      <button 
+                        onClick={() => navigate('/checkout')}
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md font-medium transition-colors">
+                        Enroll Now
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            {/* Testimonials Tab */}
+            {activeTab === 'testimonials' && (
+              <div>
+                <h2 className="text-2xl font-bold text-amber-900 mb-6">Student Testimonials</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {artist.testimonials.map((testimonial, idx) => (
+                    <div key={idx} className="p-6 border border-amber-100 rounded-lg bg-white">
+                      <div className="flex items-center gap-1 mb-3">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <svg key={i} className="w-4 h-4 fill-amber-500 text-amber-500" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                      <p className="text-amber-800 mb-4 italic">"{testimonial.text}"</p>
+                      <p className="font-semibold text-amber-900">- {testimonial.name}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Videos Tab */}
+            {activeTab === 'videos' && (
+              <div>
+                <h2 className="text-2xl font-bold text-amber-900 mb-6">Performance Videos</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {artist.videos.map((video) => (
+                    <div key={video.id} className="border border-amber-100 rounded-lg bg-white overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+                      <div className="relative">
+                        <img src={video.thumbnail} alt={video.title} className="w-full h-48 object-cover" />
+                        <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-sm">
+                          {video.duration}
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-yellow-500 rounded-full p-4 hover:bg-yellow-600 transition-colors">
+                            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-bold text-amber-900 mb-2">{video.title}</h3>
+                        <p className="text-sm text-amber-700">{video.views.toLocaleString()} views</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
