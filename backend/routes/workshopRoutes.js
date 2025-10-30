@@ -16,6 +16,9 @@ router.post("/", artistAuth, createWorkshop);
 // READ - Get all workshops
 router.get("/", getAllWorkshops);
 
+// READ - Get workshops by category slug or name (e.g. /api/workshops/category/dance)
+router.get("/category/:categoryId", getWorkshopsByCategory);
+
 // READ - Get single workshop by ID
 router.get("/:id", getWorkshopById);
 

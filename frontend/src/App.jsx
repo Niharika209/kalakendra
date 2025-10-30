@@ -9,7 +9,10 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/artist/:id" element={<ArtistProfilePage />} />
+        <Route path="/workshops" element={<WorkshopsListPage />} />
+        <Route path="/workshops/:categoryId" element={<CategoryDetailPage />} />
+        <Route path="/workshops/:categoryId/:subcategoryName" element={<SubcategoryDetailPage />} />
+        <Route path="/artists/:id" element={<ArtistProfilePage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
       </Routes>
     </Router>
