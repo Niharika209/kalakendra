@@ -1,11 +1,15 @@
 import '../App.css'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import axios from 'axios'
 import Navbar from '../components/Navbar'
 import ArtistCard from '../components/ArtistCard'
+import Footer from '../components/Footer'
 import danceImage from '../assets/dance-art.jpg'
 import sitarImage from '../assets/sitar.png'
 import paintingImage from '../assets/painting.png'
 import potteryImage from '../assets/pottery-art.jpg'
+import priyaImage from '../assets/priya.png'
 
 // Art Forms Data
 const artForms = [
@@ -39,47 +43,87 @@ const artForms = [
   },
 ];
 
-// Featured Artists Data
-const featuredArtists = [
+// Curated featured artists (4 only) shown by default. Backend results will be capped to 4 as well.
+const fallbackFeaturedArtists = [
   {
-    id: 1,
-    name: "Priya Sharma",
-    category: "Classical Dance",
-    location: "Delhi",
+    _id: 'a1',
+    slug: 'priya-sharma',
+    name: 'Priya Sharma',
+    category: 'Classical Dance',
+    location: 'Delhi',
     rating: 4.9,
     reviews: 128,
-    image: null,
+    pricePerHour: 1200,
+    thumbnailUrl: priyaImage,
   },
   {
-    id: 2,
-    name: "Rajesh Kumar",
-    category: "Classical Music",
-    location: "Mumbai",
+    _id: 'a2',
+    slug: 'rajesh-kumar',
+    name: 'Rajesh Kumar',
+    category: 'Classical Music',
+    location: 'Mumbai',
     rating: 4.8,
     reviews: 95,
-    image: null,
+    pricePerHour: 1000,
+    thumbnailUrl: sitarImage,
   },
   {
-    id: 3,
-    name: "Ananya Desai",
-    category: "Traditional Art",
-    location: "Bangalore",
+    _id: 'a3',
+    slug: 'ananya-desai',
+    name: 'Ananya Desai',
+    category: 'Traditional Art',
+    location: 'Bengaluru',
     rating: 4.7,
     reviews: 112,
-    image: null,
+    pricePerHour: 900,
+    thumbnailUrl: paintingImage,
   },
   {
-    id: 4,
-    name: "Vikram Patel",
-    category: "Folk Music",
-    location: "Pune",
+    _id: 'a4',
+    slug: 'vikram-patel',
+    name: 'Vikram Patel',
+    category: 'Pottery & Ceramics',
+    location: 'Pune',
     rating: 4.8,
     reviews: 87,
-    image: null,
+    pricePerHour: 850,
+    thumbnailUrl: potteryImage,
   },
 ]
 
 function LandingPage() {
+  const [featured, setFeatured] = useState(fallbackFeaturedArtists)
+  const [loadingFeatured, setLoadingFeatured] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadFeatured() {
+      try {
+  // try backend first
+        const resp = await axios.get('/api/artists/featured')
+        if (!cancelled) {
+          const data = resp?.data
+          // backend may return either an array or an object wrapper { artists: [...] }
+          if (Array.isArray(data)) {
+            setFeatured(data.slice(0, 4))
+          } else if (data && Array.isArray(data.artists)) {
+            setFeatured(data.artists.slice(0, 4))
+          } else {
+            // unexpected shape — keep curated fallback
+            console.warn('Unexpected /api/artists/featured response shape, expected array', data)
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load featured artists from backend, using fallback', err?.message)
+      } finally {
+        if (!cancelled) setLoadingFeatured(false)
+      }
+    }
+
+    loadFeatured()
+    return () => { cancelled = true }
+  }, [])
+
   return (
     <>
       <Navbar />
@@ -95,7 +139,7 @@ function LandingPage() {
         <p className="text-base md:text-lg lg:text-xl text-amber-50 mb-16 leading-relaxed drop-shadow max-w-2xl">
           Your gateway to traditional and contemporary arts. Learn from master artists and explore your creative potential.
         </p>
-        <button className="px-8 py-3 text-base md:text-lg font-bold text-amber-900 bg-linear-to-r from-yellow-300 to-amber-400 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out flex items-center justify-center gap-2">
+        <button className="px-8 py-3 text-base md:text-lg font-bold text-[#45453e] bg-linear-to-r from-yellow-300 to-amber-400 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out flex items-center justify-center gap-2">
           Explore Artists
           <span className="text-xl">→</span>
         </button>
@@ -154,12 +198,28 @@ function LandingPage() {
           
           {/* Artist cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredArtists.map((artist, idx) => (
-              <ArtistCard key={artist.id} artist={artist} index={idx} />
+            {featured.map((artist, idx) => (
+              <ArtistCard key={artist._id || artist.slug || idx} artist={artist} index={idx} />
             ))}
           </div>
+          {loadingFeatured && (
+            <p className="mt-6 text-center text-sm text-amber-700">Loading featured artists…</p>
+          )}
+          {!loadingFeatured && (!featured || featured.length === 0) && (
+            <div className="mt-8 p-8 bg-white/90 rounded-xl shadow-lg text-center">
+              <h3 className="text-xl font-semibold text-amber-900 mb-2">No featured artists yet</h3>
+              <p className="text-amber-700 mb-4">We don't have any featured artists at the moment. You can explore workshops or invite an artist to join.</p>
+              <div className="flex items-center justify-center gap-4">
+                <a href="/workshops" className="px-6 py-3 bg-linear-to-r from-yellow-300 to-amber-400 rounded-full text-amber-900 font-semibold">Explore Workshops</a>
+                <a href="/contact" className="px-6 py-3 border border-amber-200 rounded-full text-amber-900 font-semibold">Invite an Artist</a>
+              </div>
+            </div>
+          )}
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer />
     </>
   )
 }

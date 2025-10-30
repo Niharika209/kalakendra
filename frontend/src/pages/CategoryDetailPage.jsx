@@ -1,6 +1,8 @@
 import { useParams, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import '../App.css'
+import { useEffect, useState } from 'react'
+import axios from 'axios'
 
 // All workshop data with subcategories
 const workshopData = {
@@ -118,6 +120,34 @@ const workshopData = {
 function CategoryDetailPage() {
   const { categoryId } = useParams()
   const category = workshopData[categoryId]
+  const [workshops, setWorkshops] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function fetchWorkshops() {
+      setLoading(true)
+      try {
+        const resp = await axios.get(`/api/workshops/category/${categoryId}`)
+        if (!cancelled) setWorkshops(Array.isArray(resp.data) ? resp.data : [])
+      } catch (err) {
+        // If backend returns 404 (no workshops/resource), treat as empty list instead of showing raw error
+        const status = err?.response?.status
+        if (!cancelled && (status === 404 || status === 204)) {
+          setWorkshops([])
+          setError(null)
+        } else {
+          if (!cancelled) setError(err?.response?.data?.error || 'Could not load workshops')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    if (category) fetchWorkshops()
+    return () => { cancelled = true }
+  }, [categoryId, category])
 
   if (!category) {
     return (
@@ -146,12 +176,13 @@ function CategoryDetailPage() {
               {category.title}
             </h1>
             <p className="text-lg md:text-xl text-[#45453e]/80">
-              Explore {category.subcategories.length} workshops in {category.title}
+              {loading ? 'Loading workshops…' : `${workshops.length} workshops in ${category.title}`}
             </p>
+            {error && <p className="text-red-600 mt-2">{error}</p>}
           </div>
 
           {/* Subcategories Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {category.subcategories.map((subcategory, idx) => (
               <Link
                 key={idx}
@@ -164,6 +195,35 @@ function CategoryDetailPage() {
                 </div>
               </Link>
             ))}
+          </div>
+
+          {/* Workshops List */}
+          <div>
+            {loading && <div className="py-8 text-center">Loading workshops…</div>}
+
+            {!loading && workshops.length === 0 && (
+              <div className="py-8 text-center text-amber-700">No workshops available in {category.title}.</div>
+            )}
+
+            {!loading && workshops.length > 0 && (
+              <>
+                <h2 className="text-2xl font-bold text-amber-900 mb-4">Workshops</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {workshops.map((w) => (
+                    <div key={w._id} className="p-4 bg-white rounded-lg border border-amber-100">
+                      <h3 className="font-semibold text-amber-900 mb-2">{w.title}</h3>
+                      <p className="text-sm text-amber-700 mb-2">By {w.artist?.name || 'Unknown'}</p>
+                      <p className="text-sm text-amber-700 mb-2">📅 {w.date ? new Date(w.date).toLocaleDateString() : '-'}</p>
+                      <p className="text-sm text-amber-700 mb-4">₹{w.price}</p>
+                      <div className="flex items-center gap-2">
+                        <Link to={`/artists/${w.artist?.slug || w.artist?._id}`} className="px-3 py-2 bg-amber-100 text-amber-900 rounded">View Artist</Link>
+                        <Link to={`/workshops/${w._id}`} className="px-3 py-2 border border-amber-200 rounded">View Workshop</Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
