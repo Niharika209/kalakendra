@@ -1,6 +1,9 @@
 import './App.css'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
+import WorkshopsListPage from './pages/WorkshopsListPage'
+import CategoryDetailPage from './pages/CategoryDetailPage'
+import SubcategoryDetailPage from './pages/SubcategoryDetailPage'
 import ArtistProfilePage from './pages/ArtistProfilePage'
 import CheckoutPage from './pages/CheckoutPage'
 

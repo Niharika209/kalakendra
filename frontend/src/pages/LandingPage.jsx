@@ -1,10 +1,15 @@
 import '../App.css'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import axios from 'axios'
 import Navbar from '../components/Navbar'
 import ArtistCard from '../components/ArtistCard'
+import Footer from '../components/Footer'
 import danceImage from '../assets/dance-art.jpg'
 import sitarImage from '../assets/sitar.png'
 import paintingImage from '../assets/painting.png'
 import potteryImage from '../assets/pottery-art.jpg'
+import priyaImage from '../assets/priya.png'
 
 // Art Forms Data
 const artForms = [
@@ -74,13 +79,15 @@ const fallbackFeaturedArtists = [
     thumbnailUrl: paintingImage,
   },
   {
-    id: 4,
-    name: "Vikram Patel",
-    category: "Folk Music",
-    location: "Pune",
+    _id: 'a4',
+    slug: 'vikram-patel',
+    name: 'Vikram Patel',
+    category: 'Pottery & Ceramics',
+    location: 'Pune',
     rating: 4.8,
     reviews: 87,
-    image: null,
+    pricePerHour: 850,
+    thumbnailUrl: potteryImage,
   },
 ]
 
@@ -191,8 +198,8 @@ function LandingPage() {
           
           {/* Artist cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredArtists.map((artist, idx) => (
-              <ArtistCard key={artist.id} artist={artist} index={idx} />
+            {featured.map((artist, idx) => (
+              <ArtistCard key={artist._id || artist.slug || idx} artist={artist} index={idx} />
             ))}
           </div>
           {loadingFeatured && (

@@ -2,6 +2,7 @@ import express from "express";
 import { 
   createWorkshop, 
   getAllWorkshops, 
+  getWorkshopsByCategory,
   getWorkshopById, 
   updateWorkshop, 
   deleteWorkshop 
