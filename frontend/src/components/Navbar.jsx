@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useLocation, useNavigate, Link } from "react-router-dom"
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
@@ -33,6 +33,50 @@ function Navbar() {
   }
 
   const isHomePage = location.pathname === '/'
+
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user'))
+    } catch (e) {
+      return null
+    }
+  })
+
+  useEffect(() => {
+    const onUserChanged = () => {
+      try {
+        setUser(JSON.parse(localStorage.getItem('user')))
+      } catch (e) {
+        setUser(null)
+      }
+    }
+    window.addEventListener('userChanged', onUserChanged)
+    return () => window.removeEventListener('userChanged', onUserChanged)
+  }, [])
+
+  const handleLogout = () => {
+    try { localStorage.removeItem('user') } catch (e) {}
+    window.dispatchEvent(new CustomEvent('userChanged'))
+    setIsOpen(false)
+    navigate('/')
+  }
+
+  const ProfileButton = () => {
+    const initial = (user?.name || 'U')[0].toUpperCase()
+    return (
+      <div className="relative">
+        <button onClick={() => setIsOpen(!isOpen)} className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center font-semibold">
+          {initial}
+        </button>
+        {isOpen && (
+          <div className="absolute right-0 mt-2 w-40 bg-white border border-amber-200 rounded shadow-md p-2">
+            <div className="py-1 px-2 text-sm text-amber-900">{user?.name}</div>
+            <button onClick={handleLogout} className="w-full text-left text-sm text-red-600 py-1">Logout</button>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <nav className="sticky top-0 z-50 bg-white backdrop-blur-sm border-b border-amber-200 shadow-md transition-all duration-300 ease-out">
@@ -98,18 +142,24 @@ function Navbar() {
             </a>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Auth Buttons / Profile */}
           <div className="hidden md:flex items-center gap-4">
-            <a href="/auth/login">
-              <button className="border border-amber-300 text-[#45453e] hover:bg-amber-100 bg-white transition-all duration-300 ease-out px-4 py-2 rounded-md">
-                Login
-              </button>
-            </a>
-            <a href="/auth/signup">
-              <button className="bg-linear-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-[#45453e] shadow-md hover:shadow-lg transition-all duration-300 ease-out px-4 py-2 rounded-md font-semibold">
-                Sign Up
-              </button>
-            </a>
+            {!user ? (
+              <>
+                <Link to="/auth/login">
+                  <button className="border border-amber-300 text-[#45453e] hover:bg-amber-100 bg-white transition-all duration-300 ease-out px-4 py-2 rounded-md">
+                    Login
+                  </button>
+                </Link>
+                <Link to="/auth/signup">
+                  <button className="bg-linear-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-[#45453e] shadow-md hover:shadow-lg transition-all duration-300 ease-out px-4 py-2 rounded-md font-semibold">
+                    Sign Up
+                  </button>
+                </Link>
+              </>
+            ) : (
+              <ProfileButton />
+            )}
           </div>
         </div>
       </div>
@@ -137,16 +187,25 @@ function Navbar() {
             About
           </a>
           <div className="flex gap-2 mt-4">
-            <a href="/auth/login" className="flex-1">
-              <button className="w-full border border-amber-300 text-[#45453e] hover:bg-amber-100 bg-white transition-all duration-300 ease-out px-4 py-2 rounded-md">
-                Login
-              </button>
-            </a>
-            <a href="/auth/signup" className="flex-1">
-              <button className="w-full bg-linear-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-[#45453e] shadow-md hover:shadow-lg transition-all duration-300 ease-out px-4 py-2 rounded-md font-semibold">
-                Sign Up
-              </button>
-            </a>
+            {!user ? (
+              <>
+                <Link to="/auth/login" className="flex-1">
+                  <button className="w-full border border-amber-300 text-[#45453e] hover:bg-amber-100 bg-white transition-all duration-300 ease-out px-4 py-2 rounded-md">
+                    Login
+                  </button>
+                </Link>
+                <Link to="/auth/signup" className="flex-1">
+                  <button className="w-full bg-linear-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-[#45453e] shadow-md hover:shadow-lg transition-all duration-300 ease-out px-4 py-2 rounded-md font-semibold">
+                    Sign Up
+                  </button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="flex-1" />
+                <button onClick={handleLogout} className="w-full border border-amber-300 text-red-600 rounded-md py-2">Logout</button>
+              </>
+            )}
           </div>
         </div>
       )}

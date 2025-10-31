@@ -227,6 +227,14 @@ function LandingPage() {
               <ArtistCard key={artist._id || artist.slug || idx} artist={artist} index={idx} />
             ))}
           </div>
+          {/* Button to view all artists */}
+          <div className="text-center mt-8">
+            <Link to="/artists">
+              <button className="px-8 py-3 text-base md:text-lg font-bold text-amber-900 bg-white border border-amber-200 rounded-full shadow hover:shadow-md transition-all duration-200">
+                View All Artists
+              </button>
+            </Link>
+          </div>
           {loadingFeatured && (
             <p className="mt-6 text-center text-sm text-amber-700">Loading featured artists…</p>
           )}

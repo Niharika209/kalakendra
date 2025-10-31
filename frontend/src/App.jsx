@@ -7,6 +7,8 @@ import SubcategoryDetailPage from './pages/SubcategoryDetailPage'
 import ArtistProfilePage from './pages/ArtistProfilePage'
 import ArtistsListPage from './pages/ArtistsListPage'
 import CheckoutPage from './pages/CheckoutPage'
+import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
         <Route path="/artists" element={<ArtistsListPage />} />
         <Route path="/artists/:id" element={<ArtistProfilePage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/auth/login" element={<LoginPage />} />
+        <Route path="/auth/signup" element={<SignupPage />} />
       </Routes>
     </Router>
   )

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import Navbar from '../components/Navbar'
 import priyaImage from '../assets/priya.png'
+import ashaImage from '../assets/asha.png'
 import karanImage from '../assets/karan.png'
 import vikramImage from '../assets/vikram.png'
 import placeholderImage from '../assets/wave-background.svg'
@@ -76,17 +77,24 @@ function ArtistProfilePage() {
   // use the local `karan.png` asset as an explicit override (fallbacks follow).
   // Special-case local assets for seeded artists so their profile image uses the local file.
   const overrideImage = artist
-    ? (artist.name === 'Karan Mehta' || artist.slug === 'karan-mehta')
-      ? karanImage
-      : (artist.name === 'Vikram Rao' || artist.slug === 'vikram-rao')
-        ? vikramImage
-        : null
+    ? (artist.name === 'Asha Patel' || artist.slug === 'asha-patel')
+      ? ashaImage
+      : (artist.name === 'Karan Mehta' || artist.slug === 'karan-mehta')
+        ? karanImage
+        : (artist.name === 'Vikram Rao' || artist.slug === 'vikram-rao')
+          ? vikramImage
+          : null
     : null
   // Ensure any explicit override is used first, then prefer API images, then local fallbacks.
   const profileImage = overrideImage || artist?.imageUrl || artist?.image || artist?.thumbnailUrl || priyaImage || placeholderImage
   const pricePerHour = artist?.pricePerHour ?? artist?.hourlyRate ?? '-'
   const rating = artist?.rating ?? artist?.avgRating ?? '-'
-  const reviewsCount = artist?.reviewsCount ?? artist?.reviews ?? 0
+  // Normalize reviewsCount: prefer explicit number, otherwise use array length when reviews array exists
+  const reviewsCount = typeof artist?.reviewsCount === 'number'
+    ? artist.reviewsCount
+    : Array.isArray(artist?.reviews)
+      ? artist.reviews.length
+      : 0
   const specialties = Array.isArray(artist?.specialties) ? artist.specialties : []
   const workshops = Array.isArray(artist?.workshops) ? artist.workshops : []
   const testimonials = Array.isArray(artist?.testimonials) ? artist.testimonials : []
