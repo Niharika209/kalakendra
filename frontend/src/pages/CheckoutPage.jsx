@@ -165,7 +165,8 @@ function CheckoutPage() {
                             <img
                               src={item.image}
                               alt={item.title}
-                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              className="w-full h-full object-center object-cover"
                             />
                           ) : (
                             <span className="text-2xl">🎨</span>

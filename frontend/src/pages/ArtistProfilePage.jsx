@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import Navbar from '../components/Navbar'
 import priyaImage from '../assets/priya.png'
+import karanImage from '../assets/karan.png'
+import vikramImage from '../assets/vikram.png'
 import placeholderImage from '../assets/wave-background.svg'
 
 function ArtistProfilePage() {
@@ -70,7 +72,18 @@ function ArtistProfilePage() {
   }
 
   // Helper getters with graceful fallbacks
-  const profileImage = artist?.imageUrl || artist?.image || artist?.thumbnailUrl || priyaImage || placeholderImage
+  // Prefer any image provided by the API, but for the seeded "Karan Mehta" entry
+  // use the local `karan.png` asset as an explicit override (fallbacks follow).
+  // Special-case local assets for seeded artists so their profile image uses the local file.
+  const overrideImage = artist
+    ? (artist.name === 'Karan Mehta' || artist.slug === 'karan-mehta')
+      ? karanImage
+      : (artist.name === 'Vikram Rao' || artist.slug === 'vikram-rao')
+        ? vikramImage
+        : null
+    : null
+  // Ensure any explicit override is used first, then prefer API images, then local fallbacks.
+  const profileImage = overrideImage || artist?.imageUrl || artist?.image || artist?.thumbnailUrl || priyaImage || placeholderImage
   const pricePerHour = artist?.pricePerHour ?? artist?.hourlyRate ?? '-'
   const rating = artist?.rating ?? artist?.avgRating ?? '-'
   const reviewsCount = artist?.reviewsCount ?? artist?.reviews ?? 0
@@ -111,11 +124,12 @@ function ArtistProfilePage() {
                 {/* Profile Image */}
                 <div className="md:col-span-1">
                   <div className="sticky top-20">
-                    <div className="relative h-80 bg-linear-to-br from-amber-200 to-orange-200 rounded-lg overflow-hidden mb-4">
+                    <div className="relative h-56 sm:h-72 md:h-80 lg:h-96 bg-linear-to-br from-amber-200 to-orange-200 rounded-lg overflow-hidden mb-4">
                       <img
                         src={profileImage}
                         alt={artist.name || 'Artist'}
-                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        className="w-full h-full object-center object-cover"
                       />
                     </div>
                     <button
@@ -318,7 +332,7 @@ function ArtistProfilePage() {
                       {videos.map((video) => (
                         <div key={video._id || video.id} className="border border-amber-100 rounded-lg bg-white overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
                           <div className="relative">
-                            <img src={video.thumbnailUrl || video.thumbnail} alt={video.title} className="w-full h-48 object-cover" />
+                            <img src={video.thumbnailUrl || video.thumbnail} alt={video.title} loading="lazy" className="w-full h-40 sm:h-48 md:h-56 object-center object-cover" />
                             <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-sm">
                               {video.duration}
                             </div>

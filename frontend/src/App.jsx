@@ -5,6 +5,7 @@ import WorkshopsListPage from './pages/WorkshopsListPage'
 import CategoryDetailPage from './pages/CategoryDetailPage'
 import SubcategoryDetailPage from './pages/SubcategoryDetailPage'
 import ArtistProfilePage from './pages/ArtistProfilePage'
+import ArtistsListPage from './pages/ArtistsListPage'
 import CheckoutPage from './pages/CheckoutPage'
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <Route path="/workshops" element={<WorkshopsListPage />} />
         <Route path="/workshops/:categoryId" element={<CategoryDetailPage />} />
         <Route path="/workshops/:categoryId/:subcategoryName" element={<SubcategoryDetailPage />} />
+        <Route path="/artists" element={<ArtistsListPage />} />
         <Route path="/artists/:id" element={<ArtistProfilePage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
       </Routes>

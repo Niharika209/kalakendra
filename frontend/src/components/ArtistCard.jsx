@@ -1,9 +1,12 @@
-import seedheMautImage from '../assets/seedhe_maut.png'
 import { Link } from 'react-router-dom'
+import ashaImage from '../assets/asha.png'
 
 function ArtistCard({ artist, index }) {
   // backend fields: thumbnailUrl, imageUrl, rating, reviewsCount, slug, _id
-  const imgSrc = artist.thumbnailUrl || artist.imageUrl || artist.image || seedheMautImage
+  const placeholder = 'https://via.placeholder.com/400x300?text=No+Image'
+  // Use local asset for seeded Asha entry, then prefer API thumbnails/images, then placeholder
+  const overrideImage = artist && (artist.name === 'Asha Patel' || artist.slug === 'asha-patel') ? ashaImage : null
+  const imgSrc = overrideImage || artist.thumbnailUrl || artist.imageUrl || artist.image || placeholder
   const rating = artist.rating ?? artist.avgRating ?? 0
   const reviews = artist.reviewsCount ?? artist.reviews ?? artist.reviewCount ?? 0
   const idOrSlug = artist.slug || artist._id || artist.id
@@ -14,11 +17,13 @@ function ArtistCard({ artist, index }) {
         className="overflow-hidden hover:shadow-2xl hover:-translate-y-2 border border-amber-200 bg-white cursor-pointer group rounded-xl transition-all duration-300 ease-out animate-fade-in"
         style={{ animationDelay: `${index * 0.1}s` }}
       >
-        <div className="relative h-48 bg-linear-to-br from-yellow-200 to-amber-300 overflow-hidden">
+        <div className="relative h-40 sm:h-48 md:h-56 lg:h-64 bg-linear-to-br from-yellow-200 to-amber-300 overflow-hidden">
           <img
             src={imgSrc}
             alt={artist.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500 ease-out"
+            loading="lazy"
+            onError={(e) => { e.target.onerror = null; e.target.src = placeholder }}
+            className="w-full h-full object-center object-cover group-hover:scale-110 transition-all duration-500 ease-out"
           />
           <div className="absolute inset-0 bg-linear-to-t from-amber-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out"></div>
         </div>

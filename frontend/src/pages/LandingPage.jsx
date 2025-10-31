@@ -10,6 +10,9 @@ import sitarImage from '../assets/sitar.png'
 import paintingImage from '../assets/painting.png'
 import potteryImage from '../assets/pottery-art.jpg'
 import priyaImage from '../assets/priya.png'
+import ashaImage from '../assets/asha.png'
+import karanImage from '../assets/karan.png'
+import vikramImage from '../assets/vikram.png'
 
 // Art Forms Data
 const artForms = [
@@ -91,8 +94,28 @@ const fallbackFeaturedArtists = [
   },
 ]
 
+// Map of special local assets keyed by slug or exact name
+const specialArtistAssets = {
+  'asha-patel': ashaImage,
+  'Asha Patel': ashaImage,
+  'karan-mehta': karanImage,
+  'Karan Mehta': karanImage,
+  'vikram-rao': vikramImage,
+  'Vikram Rao': vikramImage,
+}
+
+function applyAssetOverride(artist) {
+  if (!artist) return artist
+  const key = artist.slug || artist.name
+  const asset = specialArtistAssets[key]
+  if (asset) {
+    return { ...artist, thumbnailUrl: asset }
+  }
+  return artist
+}
+
 function LandingPage() {
-  const [featured, setFeatured] = useState(fallbackFeaturedArtists)
+  const [featured, setFeatured] = useState(fallbackFeaturedArtists.map(applyAssetOverride))
   const [loadingFeatured, setLoadingFeatured] = useState(true)
 
   useEffect(() => {
@@ -105,9 +128,9 @@ function LandingPage() {
           const data = resp?.data
           // backend may return either an array or an object wrapper { artists: [...] }
           if (Array.isArray(data)) {
-            setFeatured(data.slice(0, 4))
+            setFeatured(data.slice(0, 4).map(applyAssetOverride))
           } else if (data && Array.isArray(data.artists)) {
-            setFeatured(data.artists.slice(0, 4))
+            setFeatured(data.artists.slice(0, 4).map(applyAssetOverride))
           } else {
             // unexpected shape — keep curated fallback
             console.warn('Unexpected /api/artists/featured response shape, expected array', data)
@@ -139,14 +162,16 @@ function LandingPage() {
         <p className="text-base md:text-lg lg:text-xl text-amber-50 mb-16 leading-relaxed drop-shadow max-w-2xl">
           Your gateway to traditional and contemporary arts. Learn from master artists and explore your creative potential.
         </p>
-        <button className="px-8 py-3 text-base md:text-lg font-bold text-[#45453e] bg-linear-to-r from-yellow-300 to-amber-400 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out flex items-center justify-center gap-2">
-          Explore Artists
-          <span className="text-xl">→</span>
-        </button>
+        <a href="/artists" className="inline-block">
+          <button className="px-8 py-3 text-base md:text-lg font-bold text-[#45453e] bg-linear-to-r from-yellow-300 to-amber-400 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out flex items-center justify-center gap-2">
+            Explore Artists
+            <span className="text-xl">→</span>
+          </button>
+        </a>
       </div>
 
       {/* Explore workshops Section */}
-      <section className="min-h-screen py-20 px-6 flex items-center justify-center bg-gradient-to-b from-amber-50 to-yellow-50">
+      <section className="min-h-screen py-20 px-6 flex items-center justify-center bg-linear-to-b from-amber-50 to-yellow-50">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 bg-linear-to-br from-amber-700 to-yellow-600 bg-clip-text text-transparent drop-shadow-md tracking-tight leading-tight text-center">
             Explore Workshops
@@ -161,9 +186,9 @@ function LandingPage() {
                 to={`/workshops/${artForm.id}`}
                 className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg hover:shadow-2xl transition-all hover:scale-105 cursor-pointer"
               >
-                <div className="h-48 bg-linear-to-br from-yellow-200 to-orange-300 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                <div className="h-40 sm:h-48 md:h-56 lg:h-64 bg-linear-to-br from-yellow-200 to-orange-300 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
                   {artForm.image ? (
-                    <img src={artForm.image} alt={artForm.title} className="w-full h-full object-cover" />
+                    <img src={artForm.image} alt={artForm.title} loading="lazy" className="w-full h-full object-center object-cover" />
                   ) : (
                     <span className="text-4xl">
                       {idx === 0 ? '💃' : idx === 1 ? '🎵' : idx === 2 ? '🎨' : '🏺'}
@@ -180,7 +205,7 @@ function LandingPage() {
           {/* Find More Button */}
           <div className="text-center mt-8">
             <Link to="/workshops">
-              <button className="px-10 py-4 text-base md:text-lg font-bold text-amber-900 bg-gradient-to-r from-yellow-300 to-amber-400 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out inline-flex items-center justify-center gap-2">
+              <button className="px-10 py-4 text-base md:text-lg font-bold text-amber-900 bg-linear-to-r from-yellow-300 to-amber-400 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out inline-flex items-center justify-center gap-2">
                 Find More Workshops
                 <span className="text-xl">→</span>
               </button>
