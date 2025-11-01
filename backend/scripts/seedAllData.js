@@ -211,6 +211,90 @@ const artistsSeed = [
       { title: 'Street Photography Tips', thumbnailUrl: 'https://source.unsplash.com/400x300/?street&sig=41', url: 'https://example.com/videos/karan-street.mp4', duration: '6:10', views: 980 }
     ],
   },
+  {
+    name: 'Maya Reddy',
+    slug: 'maya-reddy',
+    email: 'maya@example.com',
+    password: 'password',
+    category: 'Dancer',
+    bio: 'Contemporary and classical Bharatanatyam performer and teacher.',
+    about: 'Maya Reddy blends classical Bharatanatyam training with contemporary choreography. Based in Chennai, she has performed nationally and internationally and leads regular group workshops focusing on rhythm, expression and choreography for stage performances.',
+    location: 'Chennai',
+    imageUrl: 'https://source.unsplash.com/1200x900/?dance,performer&sig=51',
+    thumbnailUrl: 'https://source.unsplash.com/400x300/?dance,performer&sig=51',
+    pricePerHour: 1300,
+    featured: false,
+    specialties: ['Bharatanatyam', 'Contemporary Dance', 'Choreography', 'Abhinaya', 'Rhythm'],
+    experience: 9,
+    students: 420,
+    rating: 4.8,
+    reviewsCount: 92,
+    testimonials: [
+      { name: 'Sakshi Rao', rating: 5, text: 'Maya is an inspiring teacher — her choreography and attention to expression are exceptional.', date: new Date('2023-06-10') }
+    ],
+    reviews: [
+      { name: 'Sakshi Rao', rating: 5, text: 'Fantastic instructor for both technique and stage presence.' }
+    ],
+    videos: [
+      { title: 'Contemporary Bharatanatyam — Maya Reddy', thumbnailUrl: 'https://source.unsplash.com/400x300/?dance&sig=52', url: 'https://example.com/videos/maya-performance.mp4', duration: '7:22', views: 1540 }
+    ]
+  },
+  {
+    name: 'Arjun Singh',
+    slug: 'arjun-singh',
+    email: 'arjun@example.com',
+    password: 'password',
+    category: 'Painter',
+    bio: 'Contemporary landscape and mixed-media painter.',
+    about: 'Arjun Singh works with layered mixed-media techniques to explore urban landscapes and memory. He runs intensive weekend painting workshops that emphasize composition, texture and mixed media processes.',
+    location: 'Jaipur',
+    imageUrl: 'https://source.unsplash.com/1200x900/?painting,landscape&sig=61',
+    thumbnailUrl: 'https://source.unsplash.com/400x300/?painting,landscape&sig=61',
+    pricePerHour: 850,
+    featured: false,
+    specialties: ['Landscape', 'Mixed Media', 'Texture', 'Acrylic', 'Urban Sketching'],
+    experience: 7,
+    students: 210,
+    rating: 4.6,
+    reviewsCount: 48,
+    testimonials: [
+      { name: 'Meeta Joshi', rating: 5, text: 'Arjun helped me find textures I never thought to use — very hands-on.', date: new Date('2022-10-04') }
+    ],
+    reviews: [
+      { name: 'Meeta Joshi', rating: 5, text: 'Excellent practical demos and studio feedback.' }
+    ],
+    videos: [
+      { title: 'Mixed Media Textures with Arjun', thumbnailUrl: 'https://source.unsplash.com/400x300/?art&sig=62', url: 'https://example.com/videos/arjun-texture.mp4', duration: '10:00', views: 720 }
+    ]
+  },
+  {
+    name: 'Neelam Joshi',
+    slug: 'neelam-joshi',
+    email: 'neelam@example.com',
+    password: 'password',
+    category: 'Photographer',
+    bio: 'Documentary and street photographer focusing on everyday life.',
+    about: 'Neelam Joshi documents city life through a compassionate lens. She runs hands-on street photography walks and editing workshops that focus on narrative, candid shooting and ethical storytelling.',
+    location: 'Kolkata',
+    imageUrl: 'https://source.unsplash.com/1200x900/?street,photography&sig=71',
+    thumbnailUrl: 'https://source.unsplash.com/400x300/?street,photography&sig=71',
+    pricePerHour: 900,
+    featured: false,
+    specialties: ['Street Photography', 'Documentary', 'Editing Workflow', 'Natural Light'],
+    experience: 6,
+    students: 180,
+    rating: 4.5,
+    reviewsCount: 34,
+    testimonials: [
+      { name: 'Dev Malhotra', rating: 5, text: 'The street walks were eye-opening — great feedback on composition.', date: new Date('2023-03-15') }
+    ],
+    reviews: [
+      { name: 'Dev Malhotra', rating: 5, text: 'Very practical and encouraging.' }
+    ],
+    videos: [
+      { title: 'Street Editing Flow — Neelam', thumbnailUrl: 'https://source.unsplash.com/400x300/?photo,edit&sig=72', url: 'https://example.com/videos/neelam-edit.mp4', duration: '9:45', views: 410 }
+    ]
+  },
 ];
 
 const seedAll = async () => {
