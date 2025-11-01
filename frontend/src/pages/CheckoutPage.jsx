@@ -166,6 +166,7 @@ function CheckoutPage() {
                               src={item.image}
                               alt={item.title}
                               loading="lazy"
+                              onError={(e) => { e.target.onerror = null; e.target.src = '/src/assets/profile.jpg' }}
                               className="w-full h-full object-center object-cover"
                             />
                           ) : (

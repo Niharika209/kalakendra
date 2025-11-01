@@ -217,7 +217,7 @@ function CategoryDetailPage() {
                       <p className="text-sm text-amber-700 mb-4">₹{w.price}</p>
                       <div className="flex items-center gap-2">
                         <Link to={`/artists/${w.artist?.slug || w.artist?._id}`} className="px-3 py-2 bg-amber-100 text-amber-900 rounded">View Artist</Link>
-                        <Link to={`/workshops/${w._id}`} className="px-3 py-2 border border-amber-200 rounded">View Workshop</Link>
+                        <Link to={`/workshop/${w._id}`} className="px-3 py-2 border border-amber-200 rounded">View Workshop</Link>
                       </div>
                     </div>
                   ))}

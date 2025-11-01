@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import axios from 'axios'
 import Navbar from '../components/Navbar'
 import priyaImage from '../assets/priya.png'
@@ -97,7 +97,12 @@ function ArtistProfilePage() {
       : 0
   const specialties = Array.isArray(artist?.specialties) ? artist.specialties : []
   const workshops = Array.isArray(artist?.workshops) ? artist.workshops : []
-  const testimonials = Array.isArray(artist?.testimonials) ? artist.testimonials : []
+  // Prefer explicit testimonials array; fall back to reviews array if testimonials missing
+  const testimonials = Array.isArray(artist?.testimonials)
+    ? artist.testimonials
+    : Array.isArray(artist?.reviews)
+      ? artist.reviews
+      : []
   const videos = Array.isArray(artist?.videos) ? artist.videos : []
 
   return (
@@ -137,6 +142,7 @@ function ArtistProfilePage() {
                         src={profileImage}
                         alt={artist.name || 'Artist'}
                         loading="lazy"
+                        onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage }}
                         className="w-full h-full object-center object-cover"
                       />
                     </div>
@@ -288,8 +294,10 @@ function ArtistProfilePage() {
                     <h2 className="text-2xl font-bold text-amber-900 mb-6">Upcoming Workshops</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {workshops.map((workshop) => (
-                        <div key={workshop._id || workshop.id} className="p-6 border border-amber-100 rounded-lg bg-white hover:shadow-lg transition-shadow">
-                          <h3 className="text-lg font-bold text-amber-900 mb-3">{workshop.title}</h3>
+                            <div key={workshop._id || workshop.id} className="p-6 border border-amber-100 rounded-lg bg-white hover:shadow-lg transition-shadow">
+                              <h3 className="text-lg font-bold text-amber-900 mb-3">
+                                <Link to={`/workshop/${workshop._id || workshop.id}`} className="hover:underline">{workshop.title}</Link>
+                              </h3>
                           <div className="space-y-2 mb-4 text-sm text-amber-700">
                             <p>📅 {workshop.date ? new Date(workshop.date).toLocaleDateString() : '-'}</p>
                             <p>🕐 {workshop.time || '-'}</p>
@@ -299,11 +307,24 @@ function ArtistProfilePage() {
                           <div className="flex justify-between items-center mb-4">
                             <span className="text-2xl font-bold text-amber-600">₹{workshop.price}</span>
                           </div>
-                          <button
-                            onClick={() => navigate('/checkout')}
-                            className="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md font-medium transition-colors">
-                            Enroll Now
-                          </button>
+                              <button
+                                onClick={() => {
+                                  try {
+                                    const raw = localStorage.getItem('cart')
+                                    const cart = raw ? JSON.parse(raw) : []
+                                    const id = workshop._id || workshop.id
+                                    const existing = cart.find((i) => i.id === id)
+                                    if (existing) existing.quantity = (existing.quantity || 1) + 1
+                                    else cart.push({ id, title: workshop.title, price: workshop.price || 0, quantity: 1, artist: artist?.name || '', image: artist?.thumbnailUrl || artist?.imageUrl || artist?.image || placeholderImage })
+                                    localStorage.setItem('cart', JSON.stringify(cart))
+                                  } catch (e) {
+                                    console.warn('could not update cart', e)
+                                  }
+                                  navigate('/checkout')
+                                }}
+                                className="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md font-medium transition-colors">
+                                Enroll Now
+                              </button>
                         </div>
                       ))}
                     </div>
@@ -340,7 +361,7 @@ function ArtistProfilePage() {
                       {videos.map((video) => (
                         <div key={video._id || video.id} className="border border-amber-100 rounded-lg bg-white overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
                           <div className="relative">
-                            <img src={video.thumbnailUrl || video.thumbnail} alt={video.title} loading="lazy" className="w-full h-40 sm:h-48 md:h-56 object-center object-cover" />
+                            <img src={video.thumbnailUrl || video.thumbnail} alt={video.title} loading="lazy" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage }} className="w-full h-40 sm:h-48 md:h-56 object-center object-cover" />
                             <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-sm">
                               {video.duration}
                             </div>

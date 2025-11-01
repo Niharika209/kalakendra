@@ -1,11 +1,18 @@
 import { Link } from 'react-router-dom'
 import ashaImage from '../assets/asha.png'
+import karanImage from '../assets/karan.png'
+import vikramImage from '../assets/vikram.png'
 
 function ArtistCard({ artist, index }) {
   // backend fields: thumbnailUrl, imageUrl, rating, reviewsCount, slug, _id
   const placeholder = 'https://via.placeholder.com/400x300?text=No+Image'
-  // Use local asset for seeded Asha entry, then prefer API thumbnails/images, then placeholder
-  const overrideImage = artist && (artist.name === 'Asha Patel' || artist.slug === 'asha-patel') ? ashaImage : null
+  // Use local assets for seeded entries (Asha, Karan, Vikram), then prefer API thumbnails/images, then placeholder
+  let overrideImage = null
+  if (artist) {
+    if (artist.name === 'Asha Patel' || artist.slug === 'asha-patel') overrideImage = ashaImage
+    else if (artist.name === 'Karan Mehta' || artist.slug === 'karan-mehta') overrideImage = karanImage
+    else if (artist.name === 'Vikram Rao' || artist.slug === 'vikram-rao') overrideImage = vikramImage
+  }
   const imgSrc = overrideImage || artist.thumbnailUrl || artist.imageUrl || artist.image || placeholder
   const rating = artist.rating ?? artist.avgRating ?? 0
   const reviews = artist.reviewsCount ?? artist.reviews ?? artist.reviewCount ?? 0
