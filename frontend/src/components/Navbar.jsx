@@ -64,17 +64,11 @@ function Navbar() {
   const ProfileButton = () => {
     const initial = (user?.name || 'U')[0].toUpperCase()
     return (
-      <div className="relative">
-        <button onClick={() => setIsOpen(!isOpen)} className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center font-semibold">
+      <Link to="/profile">
+        <button className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center font-semibold hover:bg-amber-700 transition-all duration-200 transform hover:scale-110">
           {initial}
         </button>
-        {isOpen && (
-          <div className="absolute right-0 mt-2 w-40 bg-white border border-amber-200 rounded shadow-md p-2">
-            <div className="py-1 px-2 text-sm text-amber-900">{user?.name}</div>
-            <button onClick={handleLogout} className="w-full text-left text-sm text-red-600 py-1">Logout</button>
-          </div>
-        )}
-      </div>
+      </Link>
     )
   }
 
