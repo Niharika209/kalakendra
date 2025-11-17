@@ -88,9 +88,7 @@ function SignupPage() {
                   🎨 Artist
                 </button>
               </div>
-              {role === 'artist' && (
-                <p className="text-xs text-amber-600 mt-2 animate-fade-in">Artist profiles coming soon! For now, sign up as a learner.</p>
-              )}
+              
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

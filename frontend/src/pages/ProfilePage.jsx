@@ -8,6 +8,7 @@ function ProfilePage() {
   const [user, setUser] = useState(null)
   const [activeTab, setActiveTab] = useState('enrolled')
   const [enrolledWorkshops, setEnrolledWorkshops] = useState([])
+  const [completedWorkshops, setCompletedWorkshops] = useState([])
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
@@ -17,6 +18,10 @@ function ProfilePage() {
       const stored = localStorage.getItem('user')
       if (stored) {
         const parsed = JSON.parse(stored)
+        if (parsed.role === 'artist') {
+          navigate('/artist-dashboard')
+          return
+        }
         setUser(parsed)
         setEditName(parsed.name || '')
         setEditEmail(parsed.email || '')
@@ -30,17 +35,47 @@ function ProfilePage() {
   }, [navigate])
 
   useEffect(() => {
-    // Load enrolled workshops from localStorage cart (mock data for now)
+    // Load enrolled and completed workshops from localStorage
     try {
-      const cart = localStorage.getItem('cart')
-      if (cart) {
-        const items = JSON.parse(cart)
-        setEnrolledWorkshops(items)
+      const userWorkshops = localStorage.getItem(`workshops_${user?.email}`)
+      if (userWorkshops) {
+        const workshops = JSON.parse(userWorkshops)
+        setEnrolledWorkshops(workshops.filter(w => !w.completed))
+        setCompletedWorkshops(workshops.filter(w => w.completed))
+      } else {
+        // If no workshops stored yet, check cart as enrolled workshops
+        const cart = localStorage.getItem('cart')
+        if (cart) {
+          const items = JSON.parse(cart).map(item => ({
+            ...item,
+            completed: false,
+            enrolledDate: new Date().toISOString()
+          }))
+          setEnrolledWorkshops(items)
+          // Save to user-specific storage
+          if (user?.email) {
+            localStorage.setItem(`workshops_${user.email}`, JSON.stringify(items))
+          }
+        }
       }
     } catch (e) {
       // ignore
     }
-  }, [])
+  }, [user])
+
+  const handleMarkComplete = (workshopId) => {
+    try {
+      const allWorkshops = [...enrolledWorkshops, ...completedWorkshops]
+      const updatedWorkshops = allWorkshops.map(w => 
+        w.id === workshopId ? { ...w, completed: true, completedDate: new Date().toISOString() } : w
+      )
+      localStorage.setItem(`workshops_${user.email}`, JSON.stringify(updatedWorkshops))
+      setEnrolledWorkshops(updatedWorkshops.filter(w => !w.completed))
+      setCompletedWorkshops(updatedWorkshops.filter(w => w.completed))
+    } catch (e) {
+      // ignore
+    }
+  }
 
   const handleSaveProfile = () => {
     if (!user) return
@@ -98,12 +133,23 @@ function ProfilePage() {
                         {user.role === 'artist' ? '🎨 Artist' : '🎓 Learner'}
                       </span>
                     </div>
-                    <button
-                      onClick={() => setIsEditing(!isEditing)}
-                      className="px-4 py-2 border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition-all duration-200"
-                    >
-                      {isEditing ? 'Cancel' : 'Edit Profile'}
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setIsEditing(!isEditing)}
+                        className="px-4 py-2 border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition-all duration-200"
+                      >
+                        {isEditing ? 'Cancel' : 'Edit Profile'}
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -166,7 +212,7 @@ function ProfilePage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-amber-900">0</p>
+                  <p className="text-2xl font-bold text-amber-900">{completedWorkshops.length}</p>
                   <p className="text-sm text-amber-700">Completed</p>
                 </div>
               </div>
@@ -198,7 +244,17 @@ function ProfilePage() {
                     : 'text-amber-600 hover:text-amber-900'
                 }`}
               >
-                My Workshops
+                Enrolled ({enrolledWorkshops.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('completed')}
+                className={`pb-3 px-4 font-semibold transition-all duration-200 ${
+                  activeTab === 'completed'
+                    ? 'border-b-2 border-amber-600 text-amber-900'
+                    : 'text-amber-600 hover:text-amber-900'
+                }`}
+              >
+                Completed ({completedWorkshops.length})
               </button>
               <button
                 onClick={() => setActiveTab('wishlist')}
@@ -230,7 +286,7 @@ function ProfilePage() {
                     <svg className="w-16 h-16 text-amber-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
-                    <h3 className="text-xl font-semibold text-amber-900 mb-2">No workshops yet</h3>
+                    <h3 className="text-xl font-semibold text-amber-900 mb-2">No enrolled workshops</h3>
                     <p className="text-amber-700 mb-4">Start learning by enrolling in a workshop</p>
                     <Link to="/workshops" className="inline-block px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-all duration-200 transform hover:scale-105">
                       Explore Workshops
@@ -250,12 +306,63 @@ function ProfilePage() {
                         <div className="p-4">
                           <h3 className="font-semibold text-amber-900 mb-1">{workshop.title}</h3>
                           <p className="text-sm text-amber-700 mb-2">By {workshop.artist || 'Unknown'}</p>
-                          <p className="text-xs text-amber-600 mb-3">Enrolled • {workshop.quantity || 1} ticket(s)</p>
+                          <p className="text-xs text-amber-600 mb-3">
+                            📅 Enrolled • {workshop.quantity || 1} ticket(s)
+                          </p>
                           <div className="flex gap-2">
                             <Link to={`/workshop/${workshop.id}`} className="flex-1 text-center px-3 py-2 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700 transition-all duration-200">
                               View Details
                             </Link>
+                            <button 
+                              onClick={() => handleMarkComplete(workshop.id)}
+                              className="px-3 py-2 border border-green-600 text-green-600 rounded-lg text-sm hover:bg-green-50 transition-all duration-200"
+                              title="Mark as completed"
+                            >
+                              ✓
+                            </button>
                           </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Completed Workshops Tab */}
+            {activeTab === 'completed' && (
+              <div className="animate-fade-in">
+                {completedWorkshops.length === 0 ? (
+                  <div className="text-center py-12">
+                    <svg className="w-16 h-16 text-amber-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="text-xl font-semibold text-amber-900 mb-2">No completed workshops yet</h3>
+                    <p className="text-amber-700">Complete your enrolled workshops to see them here</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {completedWorkshops.map((workshop, idx) => (
+                      <div key={idx} className="border border-green-200 bg-green-50 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                        <div className="h-40 bg-linear-to-br from-green-200 to-emerald-200 flex items-center justify-center overflow-hidden relative">
+                          {workshop.image ? (
+                            <img src={workshop.image} alt={workshop.title} onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage }} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-5xl">🎨</span>
+                          )}
+                          <div className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                            ✓ Completed
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold text-amber-900 mb-1">{workshop.title}</h3>
+                          <p className="text-sm text-amber-700 mb-2">By {workshop.artist || 'Unknown'}</p>
+                          <p className="text-xs text-green-700 mb-3">
+                            🎉 Completed {workshop.completedDate ? new Date(workshop.completedDate).toLocaleDateString() : 'recently'}
+                          </p>
+                          <Link to={`/workshop/${workshop.id}`} className="block text-center px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-all duration-200">
+                            View Details
+                          </Link>
                         </div>
                       </div>
                     ))}
