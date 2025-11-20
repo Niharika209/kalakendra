@@ -1,29 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 
-const mockCartItems = [
-  {
-    id: 1,
-    title: "Bharatanatyam Basics",
-    artist: "Priya Sharma",
-    price: 2000,
-    image: null,
-    quantity: 1,
-  },
-  {
-    id: 2,
-    title: "Advanced Kathak Footwork",
-    artist: "Priya Sharma",
-    price: 2500,
-    image: null,
-    quantity: 1,
-  },
-]
+// Cart is persisted in localStorage under key 'cart'. Start with stored cart or empty array.
 
 function CheckoutPage() {
   const navigate = useNavigate()
-  const [cartItems, setCartItems] = useState(mockCartItems)
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const raw = localStorage.getItem('cart')
+      return raw ? JSON.parse(raw) : []
+    } catch (e) {
+      return []
+    }
+  })
   const [step, setStep] = useState("cart")
   const [paymentMethod, setPaymentMethod] = useState("card")
   const [loading, setLoading] = useState(false)
@@ -83,6 +73,15 @@ function CheckoutPage() {
       setLoading(false)
     }, 2000)
   }
+
+  // Persist cart to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('cart', JSON.stringify(cartItems))
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [cartItems])
 
   if (step === "confirmation") {
     return (
@@ -166,7 +165,9 @@ function CheckoutPage() {
                             <img
                               src={item.image}
                               alt={item.title}
-                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              onError={(e) => { e.target.onerror = null; e.target.src = '/src/assets/profile.jpg' }}
+                              className="w-full h-full object-center object-cover"
                             />
                           ) : (
                             <span className="text-2xl">🎨</span>

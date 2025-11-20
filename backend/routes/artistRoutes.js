@@ -3,6 +3,7 @@ import {
   createArtist, 
   loginArtist, 
   getAllArtists, 
+  getFeaturedArtists,
   getArtistById, 
   updateArtist, 
   deleteArtist 
@@ -15,6 +16,9 @@ router.post("/", createArtist);
 
 // READ - Get all artists
 router.get("/", getAllArtists);
+
+// READ - Featured artists (for landing page)
+router.get('/featured', getFeaturedArtists);
 
 // READ - Get single artist by ID
 router.get("/:id", getArtistById);

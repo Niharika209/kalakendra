@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import cors from "cors";
 
 // Import routes
 import artistRoutes from "./routes/artistRoutes.js";
@@ -16,6 +17,23 @@ const app = express();
 
 // Middleware
 app.use(express.json()); // parse JSON requests
+
+// Enable CORS for frontend dev servers.
+// Accept either a single origin in CLIENT_ORIGIN or a comma-separated list.
+const rawOrigins = process.env.CLIENT_ORIGIN || 'http://localhost:5173,http://localhost:5174';
+const allowedOrigins = rawOrigins.split(',').map(s => s.trim()).filter(Boolean);
+// Ensure common dev origin is present (Vite default is 5173)
+if (!allowedOrigins.includes('http://localhost:5173')) allowedOrigins.push('http://localhost:5173');
+console.log('CORS allowed origins:', allowedOrigins);
+app.use(cors({
+  origin: function(origin, callback) {
+    // allow non-browser requests (e.g., curl, server-to-server) when origin is undefined
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)

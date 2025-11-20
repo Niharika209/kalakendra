@@ -27,11 +27,11 @@ function WorkshopsListPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-16 px-6 bg-gradient-to-b from-amber-50 to-yellow-50">
+      <div className="min-h-screen pt-16 px-6 bg-linear-to-b from-amber-50 to-yellow-50">
         <div className="max-w-7xl mx-auto pb-20">
           {/* Header */}
           <div className="mb-8 text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-yellow-600 pb-2">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-linear-to-r from-amber-700 to-yellow-600 pb-2">
               All Workshop Categories
             </h1>
             <p className="text-lg md:text-xl text-[#45453e]/80 max-w-2xl mx-auto">
@@ -49,7 +49,7 @@ function WorkshopsListPage() {
               >
                 <div className="flex flex-col h-full">
                   <h3 className="text-2xl font-bold text-[#45453e] mb-2">{category.title}</h3>
-                  <p className="text-[#45453e]/70 mb-4 flex-grow">{category.description}</p>
+                  <p className="text-[#45453e]/70 mb-4 grow">{category.description}</p>
                   <div className="flex items-center justify-between pt-4 border-t border-amber-100">
                     <span className="text-sm text-amber-600 font-semibold">{category.count} workshops</span>
                     <span className="text-amber-600 text-xl">→</span>

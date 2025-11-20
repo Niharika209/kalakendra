@@ -43,15 +43,15 @@ function SubcategoryDetailPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-16 px-6 bg-gradient-to-b from-amber-50 to-yellow-50">
+      <div className="min-h-screen pt-16 px-6 bg-linear-to-b from-amber-50 to-yellow-50">
         <div className="max-w-7xl mx-auto pb-20">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-yellow-600 pb-2">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-linear-to-r from-amber-700 to-yellow-600 pb-2">
               {displayName}
             </h1>
             <p className="text-lg md:text-xl text-[#45453e]/80 mb-4">
-              Find the perfect artist for {displayName} workshops
+              Find the perfect artist for {displayName}
             </p>
             <Link 
               to={`/workshops/${categoryId}`}
@@ -84,7 +84,7 @@ function SubcategoryDetailPage() {
                   <p className="text-sm text-amber-700 mb-4">₹{w.price}</p>
                   <div className="flex items-center gap-2">
                     <Link to={`/artists/${w.artist?.slug || w.artist?._id}`} className="px-3 py-2 bg-amber-100 text-amber-900 rounded">View Artist</Link>
-                    <Link to={`/workshops/${w._id}`} className="px-3 py-2 border border-amber-200 rounded">View Workshop</Link>
+                    <Link to={`/workshop/${w._id}`} className="px-3 py-2 border border-amber-200 rounded">View Workshop</Link>
                   </div>
                 </div>
               </div>
