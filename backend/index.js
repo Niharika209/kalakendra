@@ -2,8 +2,10 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 // Import routes
+import authRoutes from "./routes/authRoutes.js";
 import artistRoutes from "./routes/artistRoutes.js";
 import learnerRoutes from "./routes/learnerRoutes.js";
 import workshopRoutes from "./routes/workshopRoutes.js";
@@ -16,7 +18,8 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(express.json()); // parse JSON requests
+app.use(express.json());
+app.use(cookieParser());
 
 // Enable CORS for frontend dev servers.
 // Accept either a single origin in CLIENT_ORIGIN or a comma-separated list.
@@ -41,6 +44,7 @@ mongoose.connect(process.env.MONGO_URI)
   .catch((err) => console.log("MongoDB connection error:", err));
 
 // Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/artists", artistRoutes);
 app.use("/api/learners", learnerRoutes);
 app.use("/api/workshops", workshopRoutes);

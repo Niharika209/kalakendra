@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useLocation, useNavigate, Link } from "react-router-dom"
+import { useAuth } from "../context/AuthContext"
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
 
   const handleExploreArtists = (e) => {
     e.preventDefault()
@@ -34,29 +36,8 @@ function Navbar() {
 
   const isHomePage = location.pathname === '/'
 
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('user'))
-    } catch (e) {
-      return null
-    }
-  })
-
-  useEffect(() => {
-    const onUserChanged = () => {
-      try {
-        setUser(JSON.parse(localStorage.getItem('user')))
-      } catch (e) {
-        setUser(null)
-      }
-    }
-    window.addEventListener('userChanged', onUserChanged)
-    return () => window.removeEventListener('userChanged', onUserChanged)
-  }, [])
-
-  const handleLogout = () => {
-    try { localStorage.removeItem('user') } catch (e) {}
-    window.dispatchEvent(new CustomEvent('userChanged'))
+  const handleLogout = async () => {
+    await logout()
     setIsOpen(false)
     navigate('/')
   }

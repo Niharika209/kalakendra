@@ -1,50 +1,49 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import { useAuth } from '../context/AuthContext'
 
 function SignupPage() {
   const navigate = useNavigate()
+  const { register } = useAuth()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [role, setRole] = useState('learner') // 'learner' or 'artist'
+  const [role, setRole] = useState('learner')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
-    // Validate passwords match
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       return
     }
 
-    // Validate password length
     if (password.length < 6) {
       setError('Password must be at least 6 characters')
       return
     }
 
-    // Store user object locally with all fields
-    const user = {
-      firstName,
-      lastName,
-      name: `${firstName} ${lastName}`,
-      email,
-      role,
-      password // In production, never store plain passwords!
-    }
+    setLoading(true)
+
     try {
-      localStorage.setItem('user', JSON.stringify(user))
-    } catch (e) {
-      setError('Could not create account. Please try again.')
-      return
+      await register({
+        name: `${firstName} ${lastName}`,
+        email,
+        password,
+        role
+      })
+      navigate('/')
+    } catch (err) {
+      setError(err.message || 'Signup failed. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    window.dispatchEvent(new CustomEvent('userChanged'))
-    navigate('/')
   }
 
   return (
@@ -152,8 +151,11 @@ function SignupPage() {
               />
             </div>
 
-            <button className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105">
-              Create Account
+            <button 
+              disabled={loading}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
           <p className="text-sm text-amber-700 mt-6 text-center">

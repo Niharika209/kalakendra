@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import placeholderImage from '../assets/wave-background.svg'
 
 function ArtistProfileDashboard() {
   const navigate = useNavigate()
-  const [user, setUser] = useState(null)
+  const { user, logout } = useAuth()
   const [activeTab, setActiveTab] = useState('workshops')
   const [myWorkshops, setMyWorkshops] = useState([])
   const [bookings, setBookings] = useState([])
@@ -28,26 +29,17 @@ function ArtistProfileDashboard() {
   })
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('user')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (parsed.role !== 'artist') {
-          navigate('/profile') // Redirect non-artists to learner profile
-          return
-        }
-        setUser(parsed)
-        setEditName(parsed.name || '')
-        setEditEmail(parsed.email || '')
-        setEditBio(parsed.bio || '')
-        setEditSpeciality(parsed.speciality || '')
-      } else {
-        navigate('/auth/login')
+    if (user) {
+      if (user.role !== 'artist') {
+        navigate('/profile') // Redirect non-artists to learner profile
+        return
       }
-    } catch (e) {
-      navigate('/auth/login')
+      setEditName(user.name || '')
+      setEditEmail(user.email || '')
+      setEditBio(user.bio || '')
+      setEditSpeciality(user.speciality || '')
     }
-  }, [navigate])
+  }, [user, navigate])
 
   useEffect(() => {
     if (!user) return
@@ -75,6 +67,7 @@ function ArtistProfileDashboard() {
 
   const handleSaveProfile = () => {
     if (!user) return
+    // TODO: Implement API call to update artist profile
     const updated = { 
       ...user, 
       name: editName, 
@@ -82,14 +75,8 @@ function ArtistProfileDashboard() {
       bio: editBio,
       speciality: editSpeciality 
     }
-    try {
-      localStorage.setItem('user', JSON.stringify(updated))
-      setUser(updated)
-      window.dispatchEvent(new CustomEvent('userChanged'))
-      setIsEditing(false)
-    } catch (e) {
-      // ignore
-    }
+    console.log('Profile update:', updated)
+    setIsEditing(false)
   }
 
   const handleAddWorkshop = () => {
@@ -134,11 +121,8 @@ function ArtistProfileDashboard() {
     }
   }
 
-  const handleLogout = () => {
-    try {
-      localStorage.removeItem('user')
-    } catch (e) {}
-    window.dispatchEvent(new CustomEvent('userChanged'))
+  const handleLogout = async () => {
+    await logout()
     navigate('/')
   }
 

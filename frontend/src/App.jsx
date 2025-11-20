@@ -1,5 +1,6 @@
 import './App.css'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
+import PrivateRoute from './components/PrivateRoute'
 import LandingPage from './pages/LandingPage'
 import WorkshopsListPage from './pages/WorkshopsListPage'
 import CategoryDetailPage from './pages/CategoryDetailPage'
@@ -15,22 +16,20 @@ import ArtistProfileDashboard from './pages/ArtistProfileDashboard'
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/workshops" element={<WorkshopsListPage />} />
-        <Route path="/workshops/:categoryId" element={<CategoryDetailPage />} />
-        <Route path="/workshops/:categoryId/:subcategoryName" element={<SubcategoryDetailPage />} />
-        <Route path="/artists" element={<ArtistsListPage />} />
-        <Route path="/artists/:id" element={<ArtistProfilePage />} />
-        <Route path="/workshop/:id" element={<WorkshopDetailPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/artist-dashboard" element={<ArtistProfileDashboard />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/auth/login" element={<LoginPage />} />
-        <Route path="/auth/signup" element={<SignupPage />} />
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/workshops" element={<WorkshopsListPage />} />
+      <Route path="/workshops/:categoryId" element={<CategoryDetailPage />} />
+      <Route path="/workshops/:categoryId/:subcategoryName" element={<SubcategoryDetailPage />} />
+      <Route path="/artists" element={<ArtistsListPage />} />
+      <Route path="/artists/:id" element={<ArtistProfilePage />} />
+      <Route path="/workshop/:id" element={<WorkshopDetailPage />} />
+      <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+      <Route path="/artist-dashboard" element={<PrivateRoute requiredRole="artist"><ArtistProfileDashboard /></PrivateRoute>} />
+      <Route path="/checkout" element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
+      <Route path="/auth/login" element={<LoginPage />} />
+      <Route path="/auth/signup" element={<SignupPage />} />
+    </Routes>
   )
 }
 

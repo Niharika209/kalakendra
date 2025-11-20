@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import placeholderImage from '../assets/wave-background.svg'
 
 function ProfilePage() {
   const navigate = useNavigate()
-  const [user, setUser] = useState(null)
+  const { user, logout } = useAuth()
   const [activeTab, setActiveTab] = useState('enrolled')
   const [enrolledWorkshops, setEnrolledWorkshops] = useState([])
   const [completedWorkshops, setCompletedWorkshops] = useState([])
@@ -14,25 +15,15 @@ function ProfilePage() {
   const [editEmail, setEditEmail] = useState('')
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('user')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (parsed.role === 'artist') {
-          navigate('/artist-dashboard')
-          return
-        }
-        setUser(parsed)
-        setEditName(parsed.name || '')
-        setEditEmail(parsed.email || '')
-      } else {
-        // No user logged in, redirect to login
-        navigate('/auth/login')
+    if (user) {
+      if (user.role === 'artist') {
+        navigate('/artist-dashboard')
+        return
       }
-    } catch (e) {
-      navigate('/auth/login')
+      setEditName(user.name || '')
+      setEditEmail(user.email || '')
     }
-  }, [navigate])
+  }, [user, navigate])
 
   useEffect(() => {
     // Load enrolled and completed workshops from localStorage
@@ -79,22 +70,14 @@ function ProfilePage() {
 
   const handleSaveProfile = () => {
     if (!user) return
+    // TODO: Implement API call to update user profile
     const updated = { ...user, name: editName, email: editEmail }
-    try {
-      localStorage.setItem('user', JSON.stringify(updated))
-      setUser(updated)
-      window.dispatchEvent(new CustomEvent('userChanged'))
-      setIsEditing(false)
-    } catch (e) {
-      // ignore
-    }
+    console.log('Profile update:', updated)
+    setIsEditing(false)
   }
 
-  const handleLogout = () => {
-    try {
-      localStorage.removeItem('user')
-    } catch (e) {}
-    window.dispatchEvent(new CustomEvent('userChanged'))
+  const handleLogout = async () => {
+    await logout()
     navigate('/')
   }
 
