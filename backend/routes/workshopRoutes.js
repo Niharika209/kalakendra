@@ -3,16 +3,17 @@ import {
   createWorkshop, 
   getAllWorkshops, 
   getWorkshopsByCategory,
+  getWorkshopsByArtist,
   getWorkshopById, 
   updateWorkshop, 
   deleteWorkshop 
 } from "../controllers/workshopController.js";
-import { artistAuth } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// CREATE - Create workshop (requires artist auth)
-router.post("/", artistAuth, createWorkshop);
+// CREATE - Create workshop (requires authentication)
+router.post("/", protect, createWorkshop);
 
 // READ - Get all workshops
 router.get("/", getAllWorkshops);
@@ -20,13 +21,16 @@ router.get("/", getAllWorkshops);
 // READ - Get workshops by category slug or name (e.g. /api/workshops/category/dance)
 router.get("/category/:categoryId", getWorkshopsByCategory);
 
-// READ - Get single workshop by ID
+// READ - Get workshops by artist ID (MUST come before /:id to avoid conflict)
+router.get("/artist/:artistId", getWorkshopsByArtist);
+
+// READ - Get single workshop by ID (MUST come AFTER specific routes)
 router.get("/:id", getWorkshopById);
 
-// UPDATE - Update workshop
-router.put("/:id", updateWorkshop);
+// UPDATE - Update workshop (requires authentication)
+router.put("/:id", protect, updateWorkshop);
 
-// DELETE - Delete workshop
-router.delete("/:id", deleteWorkshop);
+// DELETE - Delete workshop (requires authentication)
+router.delete("/:id", protect, deleteWorkshop);
 
 export default router;

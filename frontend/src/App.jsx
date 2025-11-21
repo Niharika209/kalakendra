@@ -13,6 +13,7 @@ import SignupPage from './pages/SignupPage'
 import WorkshopDetailPage from './pages/WorkshopDetailPage'
 import ProfilePage from './pages/ProfilePage'
 import ArtistProfileDashboard from './pages/ArtistProfileDashboard'
+import CreateWorkshopPage from './pages/CreateWorkshopPage'
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
       <Route path="/workshop/:id" element={<WorkshopDetailPage />} />
       <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
       <Route path="/artist-dashboard" element={<PrivateRoute requiredRole="artist"><ArtistProfileDashboard /></PrivateRoute>} />
+      <Route path="/create-workshop" element={<PrivateRoute requiredRole="artist"><CreateWorkshopPage /></PrivateRoute>} />
       <Route path="/checkout" element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/signup" element={<SignupPage />} />

@@ -4,7 +4,8 @@ import {
   loginArtist, 
   getAllArtists, 
   getFeaturedArtists,
-  getArtistById, 
+  getArtistById,
+  getArtistByEmail, 
   updateArtist, 
   deleteArtist 
 } from "../controllers/artistController.js";
@@ -19,6 +20,9 @@ router.get("/", getAllArtists);
 
 // READ - Featured artists (for landing page)
 router.get('/featured', getFeaturedArtists);
+
+// READ - Get artist by email
+router.get('/email/:email', getArtistByEmail);
 
 // READ - Get single artist by ID
 router.get("/:id", getArtistById);

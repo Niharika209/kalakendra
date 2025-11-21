@@ -1,6 +1,27 @@
 import Artist from "../models/Artist.js";
 import Workshop from "../models/Workshop.js";
 
+// READ - Get artist by email
+export const getArtistByEmail = async (req, res) => {
+  try {
+    const email = req.params.email;
+    console.log('🔍 Fetching artist by email:', email);
+    
+    const artist = await Artist.findOne({ email }).lean();
+    
+    if (!artist) {
+      console.log('❌ Artist not found for email:', email);
+      return res.status(404).json({ error: "Artist not found" });
+    }
+
+    console.log('✅ Artist found:', artist._id);
+    res.json(artist);
+  } catch (err) {
+    console.error('❌ Error fetching artist by email:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // CREATE - Signup a new artist
 export const createArtist = async (req, res) => {
   try {

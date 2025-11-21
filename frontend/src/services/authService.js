@@ -2,35 +2,57 @@ const API_URL = 'http://localhost:5000/api/auth';
 
 export const authService = {
   async register(userData) {
-    const response = await fetch(`${API_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(userData)
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Registration failed');
+    console.log('🌐 Sending registration request to backend:', userData.email);
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(userData)
+      });
+      
+      console.log('📡 Registration response status:', response.status);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Registration request failed:', error);
+        throw new Error(error.message || 'Registration failed');
+      }
+      
+      const data = await response.json();
+      console.log('✅ Registration request successful');
+      return data;
+    } catch (error) {
+      console.error('❌ Registration error:', error);
+      throw error;
     }
-    
-    return response.json();
   },
 
   async login(credentials) {
-    const response = await fetch(`${API_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(credentials)
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Login failed');
+    console.log('🌐 Sending login request to backend:', credentials.email);
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(credentials)
+      });
+      
+      console.log('📡 Login response status:', response.status);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Login request failed:', error);
+        throw new Error(error.message || 'Login failed');
+      }
+      
+      const data = await response.json();
+      console.log('✅ Login request successful');
+      return data;
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      throw error;
     }
-    
-    return response.json();
   },
 
   async logout(accessToken) {
@@ -67,6 +89,7 @@ export const authService = {
     });
     
     if (!response.ok) {
+      // Don't log error - 403 is expected when no refresh token exists
       throw new Error('Token refresh failed');
     }
     

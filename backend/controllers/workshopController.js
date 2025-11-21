@@ -1,11 +1,64 @@
 import Workshop from "../models/Workshop.js";
 
+// READ - Get workshops by artist ID
+export const getWorkshopsByArtist = async (req, res) => {
+  try {
+    const { artistId } = req.params;
+    console.log('🔍 Fetching workshops for artist:', artistId);
+    
+    const workshops = await Workshop.find({ artist: artistId })
+      .populate('artist')
+      .sort({ date: -1 });
+    
+    console.log(`✅ Found ${workshops.length} workshops`);
+    res.json(workshops);
+  } catch (err) {
+    console.error('❌ Error fetching artist workshops:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // CREATE - Create a new workshop
 export const createWorkshop = async (req, res) => {
   try {
+    console.log('🎨 Workshop creation request received');
+    console.log('📋 Full request body:', JSON.stringify(req.body, null, 2));
+    console.log('👤 User from token:', req.user?._id, req.userRole);
+    
+    // Validate required fields
+    if (!req.body.title) {
+      console.error('❌ Validation failed: title is required');
+      return res.status(400).json({ error: 'Title is required' });
+    }
+    if (!req.body.artist) {
+      console.error('❌ Validation failed: artist is required');
+      return res.status(400).json({ error: 'Artist ID is required' });
+    }
+    if (!req.body.date) {
+      console.error('❌ Validation failed: date is required');
+      return res.status(400).json({ error: 'Date is required' });
+    }
+    if (!req.body.price) {
+      console.error('❌ Validation failed: price is required');
+      return res.status(400).json({ error: 'Price is required' });
+    }
+    
     const workshop = await Workshop.create(req.body);
+    console.log('✅ Workshop created successfully:', {
+      id: workshop._id,
+      title: workshop.title
+    });
+    
     res.status(201).json(workshop);
   } catch (err) {
+    console.error('❌ Workshop creation error:', err.message);
+    console.error('Error name:', err.name);
+    if (err.name === 'ValidationError') {
+      console.error('Validation errors:', err.errors);
+      const messages = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ error: `Validation failed: ${messages.join(', ')}` });
+    }
+    console.error('Full error:', err);
     res.status(400).json({ error: err.message });
   }
 };

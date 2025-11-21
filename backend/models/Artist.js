@@ -45,6 +45,7 @@ const artistSchema = new mongoose.Schema({
     text: String,
     date: Date
   }],
+  refreshTokens: { type: [String], default: [] }
 }, { timestamps: true });
 
 // Indexes for fast featured queries and lookups

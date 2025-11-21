@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import Artist from "../models/Artist.js";
+import Learner from "../models/Learner.js";
 
 // Protect routes - verify JWT token
 export const protect = async (req, res, next) => {
@@ -10,21 +11,29 @@ export const protect = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.ACCESS_SECRET || 'access-secret');
-    req.user = await User.findById(decoded.id).select('-password -refreshTokens');
     
-    if (!req.user) {
+    // Try to find in Artist collection first, then Learner
+    let profile = await Artist.findById(decoded.id).select('-password -refreshTokens');
+    let userRole = 'artist';
+    
+    if (!profile) {
+      profile = await Learner.findById(decoded.id).select('-password -refreshTokens');
+      userRole = 'learner';
+    }
+    
+    if (!profile) {
       return res.status(401).json({ message: 'User not found' });
     }
+    
+    req.user = profile;
+    req.userRole = userRole;
     next();
   } catch (error) {
     res.status(401).json({ message: 'Invalid token' });
   }
 };
 
-// Old middleware (keeping for backward compatibility)
-import Artist from "../models/Artist.js";
-import Learner from "../models/Learner.js";
-
+// Role-specific middleware
 export const artistAuth = async (req, res, next) => {
   const { email, password } = req.body;
   const artist = await Artist.findOne({ email, password });

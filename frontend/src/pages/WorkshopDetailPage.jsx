@@ -78,29 +78,101 @@ function WorkshopDetailPage() {
                 <p className="text-amber-800 leading-relaxed">{workshop.description || 'No description provided.'}</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {workshop.whatYouWillLearn && (
+                <div className="mb-6 bg-white p-6 rounded-lg border border-amber-100">
+                  <h2 className="text-xl font-semibold text-amber-900 mb-3">🎯 What You'll Learn</h2>
+                  <p className="text-amber-800 leading-relaxed whitespace-pre-line">{workshop.whatYouWillLearn}</p>
+                </div>
+              )}
+
+              {workshop.requirements && (
+                <div className="mb-6 bg-white p-6 rounded-lg border border-amber-100">
+                  <h2 className="text-xl font-semibold text-amber-900 mb-3">📝 Requirements</h2>
+                  <p className="text-amber-800 leading-relaxed whitespace-pre-line">{workshop.requirements}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="p-4 bg-white rounded-lg border border-amber-100">
-                  <h3 className="font-semibold text-amber-900 mb-2">When</h3>
-                  <p className="text-amber-700">{workshop.date ? new Date(workshop.date).toLocaleString() : 'TBA'}</p>
-                  <p className="text-amber-700">{workshop.time || ''}</p>
+                  <h3 className="font-semibold text-amber-900 mb-2">📅 When</h3>
+                  <p className="text-amber-700">{workshop.date ? new Date(workshop.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'TBA'}</p>
+                  <p className="text-amber-700 font-medium">{workshop.time || 'Time TBA'}</p>
                 </div>
                 <div className="p-4 bg-white rounded-lg border border-amber-100">
-                  <h3 className="font-semibold text-amber-900 mb-2">Details</h3>
-                  <p className="text-amber-700">Duration: {workshop.duration || '-'}</p>
-                  <p className="text-amber-700">Mode: {workshop.mode || 'Online/Offline'}</p>
-                  <p className="text-amber-700">Location: {workshop.location || '-'}</p>
+                  <h3 className="font-semibold text-amber-900 mb-2">⏱️ Duration</h3>
+                  <p className="text-amber-700 text-lg font-medium">{workshop.duration || 'TBA'}</p>
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-white rounded-lg border border-amber-100">
+                  <h3 className="font-semibold text-amber-900 mb-2">📍 Mode & Location</h3>
+                  <p className="text-amber-700">
+                    <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-2">
+                      {workshop.mode || 'Online'}
+                    </span>
+                  </p>
+                  <p className="text-amber-700">{workshop.location || (workshop.mode === 'Online' ? 'Online Platform' : 'Location TBA')}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg border border-amber-100">
+                  <h3 className="font-semibold text-amber-900 mb-2">🎯 Target Audience</h3>
+                  <p className="text-amber-700">{workshop.targetAudience || 'All Levels'}</p>
+                  {workshop.maxParticipants && (
+                    <p className="text-amber-600 text-sm mt-2">👥 Max: {workshop.maxParticipants} participants</p>
+                  )}
+                </div>
+              </div>
+
+              {(workshop.materialProvided || workshop.certificateProvided) && (
+                <div className="mt-6 bg-amber-50 p-6 rounded-lg border border-amber-200">
+                  <h3 className="font-semibold text-amber-900 mb-3">✨ Included</h3>
+                  <div className="space-y-2">
+                    {workshop.materialProvided && (
+                      <div className="flex items-center text-amber-800">
+                        <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span>Materials Provided</span>
+                      </div>
+                    )}
+                    {workshop.certificateProvided && (
+                      <div className="flex items-center text-amber-800">
+                        <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span>Certificate of Completion</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <aside className="md:col-span-1">
               <div className="p-6 bg-white rounded-lg border border-amber-100 sticky top-24">
+                {(workshop.category || workshop.subcategory) && (
+                  <div className="mb-4 pb-4 border-b border-amber-100">
+                    {workshop.category && (
+                      <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium mb-2">
+                        {workshop.category}
+                      </span>
+                    )}
+                    {workshop.subcategory && (
+                      <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium ml-2 mb-2">
+                        {workshop.subcategory}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="mb-4">
-                  <div className="text-2xl font-bold text-amber-600">₹{workshop.price || 0}</div>
-                  <div className="text-sm text-amber-700">{workshop.enrolled ?? 0} enrolled</div>
+                  <div className="text-3xl font-bold text-amber-600">₹{workshop.price || 0}</div>
+                  <div className="text-sm text-amber-700 mt-1">
+                    👥 {workshop.enrolled ?? 0} enrolled
+                    {workshop.maxParticipants && ` / ${workshop.maxParticipants} max`}
+                  </div>
                 </div>
-                <button onClick={() => addToCart(workshop)} className="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-md font-medium">Enroll Now</button>
-                <button onClick={() => navigate(-1)} className="w-full mt-3 border border-amber-200 text-amber-900 px-4 py-2 rounded-md">Back</button>
+                <button onClick={() => addToCart(workshop)} className="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-md font-medium transition-colors">🎓 Enroll Now</button>
+                <button onClick={() => navigate(-1)} className="w-full mt-3 border border-amber-200 hover:bg-amber-50 text-amber-900 px-4 py-2 rounded-md transition-colors">← Back</button>
               </div>
             </aside>
           </div>

@@ -1,37 +1,30 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import axios from 'axios'
 import Navbar from '../components/Navbar'
 import placeholderImage from '../assets/wave-background.svg'
 
+const API_URL = 'http://localhost:5000/api'
+
 function ArtistProfileDashboard() {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout, accessToken } = useAuth()
   const [activeTab, setActiveTab] = useState('workshops')
   const [myWorkshops, setMyWorkshops] = useState([])
+  const [artistData, setArtistData] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [bookings, setBookings] = useState([])
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
   const [editBio, setEditBio] = useState('')
   const [editSpeciality, setEditSpeciality] = useState('')
-  const [showAddWorkshop, setShowAddWorkshop] = useState(false)
-  
-  // New workshop form state
-  const [newWorkshop, setNewWorkshop] = useState({
-    title: '',
-    description: '',
-    category: 'Painting',
-    price: '',
-    duration: '',
-    mode: 'Online',
-    maxParticipants: ''
-  })
 
   useEffect(() => {
     if (user) {
       if (user.role !== 'artist') {
-        navigate('/profile') // Redirect non-artists to learner profile
+        navigate('/profile') 
         return
       }
       setEditName(user.name || '')
@@ -44,25 +37,27 @@ function ArtistProfileDashboard() {
   useEffect(() => {
     if (!user) return
     
-    // Load artist's workshops
-    try {
-      const artistWorkshops = localStorage.getItem(`artist_workshops_${user.email}`)
-      if (artistWorkshops) {
-        setMyWorkshops(JSON.parse(artistWorkshops))
+    // Fetch artist data and workshops from API
+    const fetchArtistData = async () => {
+      try {
+        setLoading(true)
+        // Get artist profile
+        const artistResponse = await axios.get(`${API_URL}/artists/email/${user.email}`)
+        const artist = artistResponse.data
+        setArtistData(artist)
+        
+        // Get artist's workshops
+        const workshopsResponse = await axios.get(`${API_URL}/workshops/artist/${artist._id}`)
+        setMyWorkshops(workshopsResponse.data)
+        console.log('✅ Loaded', workshopsResponse.data.length, 'workshops')
+      } catch (error) {
+        console.error('Error fetching artist data:', error)
+      } finally {
+        setLoading(false)
       }
-    } catch (e) {
-      // ignore
     }
-
-    // Load bookings for artist's workshops
-    try {
-      const allBookings = localStorage.getItem(`artist_bookings_${user.email}`)
-      if (allBookings) {
-        setBookings(JSON.parse(allBookings))
-      }
-    } catch (e) {
-      // ignore
-    }
+    
+    fetchArtistData()
   }, [user])
 
   const handleSaveProfile = () => {
@@ -79,45 +74,18 @@ function ArtistProfileDashboard() {
     setIsEditing(false)
   }
 
-  const handleAddWorkshop = () => {
-    if (!user || !newWorkshop.title || !newWorkshop.price) return
+  const handleDeleteWorkshop = async (workshopId) => {
+    if (!window.confirm('Are you sure you want to delete this workshop?')) return
     
-    const workshop = {
-      id: Date.now().toString(),
-      ...newWorkshop,
-      artist: user.name,
-      artistEmail: user.email,
-      enrolled: 0,
-      createdAt: new Date().toISOString(),
-      status: 'active'
-    }
-
     try {
-      const updated = [...myWorkshops, workshop]
-      localStorage.setItem(`artist_workshops_${user.email}`, JSON.stringify(updated))
-      setMyWorkshops(updated)
-      setShowAddWorkshop(false)
-      setNewWorkshop({
-        title: '',
-        description: '',
-        category: 'Painting',
-        price: '',
-        duration: '',
-        mode: 'Online',
-        maxParticipants: ''
+      await axios.delete(`${API_URL}/workshops/${workshopId}`, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
       })
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  const handleDeleteWorkshop = (workshopId) => {
-    try {
-      const updated = myWorkshops.filter(w => w.id !== workshopId)
-      localStorage.setItem(`artist_workshops_${user.email}`, JSON.stringify(updated))
-      setMyWorkshops(updated)
-    } catch (e) {
-      // ignore
+      setMyWorkshops(myWorkshops.filter(w => w._id !== workshopId))
+      console.log('✅ Workshop deleted')
+    } catch (error) {
+      console.error('Error deleting workshop:', error)
+      alert('Failed to delete workshop')
     }
   }
 
@@ -356,114 +324,16 @@ function ArtistProfileDashboard() {
               <div className="animate-fade-in">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold text-purple-900">Your Workshops</h2>
-                  <button
-                    onClick={() => setShowAddWorkshop(true)}
+                  <Link
+                    to="/create-workshop"
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    Add Workshop
-                  </button>
+                    Create Workshop
+                  </Link>
                 </div>
-
-                {/* Add Workshop Form */}
-                {showAddWorkshop && (
-                  <div className="mb-6 p-6 bg-purple-50 rounded-xl border border-purple-200 animate-fade-in">
-                    <h3 className="text-lg font-semibold text-purple-900 mb-4">Create New Workshop</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-purple-900 mb-2">Workshop Title</label>
-                        <input
-                          value={newWorkshop.title}
-                          onChange={(e) => setNewWorkshop({...newWorkshop, title: e.target.value})}
-                          placeholder="e.g., Watercolor Landscape Painting"
-                          className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-purple-900 mb-2">Description</label>
-                        <textarea
-                          value={newWorkshop.description}
-                          onChange={(e) => setNewWorkshop({...newWorkshop, description: e.target.value})}
-                          rows={3}
-                          placeholder="Describe what students will learn..."
-                          className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-purple-900 mb-2">Category</label>
-                        <select
-                          value={newWorkshop.category}
-                          onChange={(e) => setNewWorkshop({...newWorkshop, category: e.target.value})}
-                          className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        >
-                          <option>Painting</option>
-                          <option>Sculpture</option>
-                          <option>Photography</option>
-                          <option>Music</option>
-                          <option>Dance</option>
-                          <option>Crafts</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-purple-900 mb-2">Price (₹)</label>
-                        <input
-                          type="number"
-                          value={newWorkshop.price}
-                          onChange={(e) => setNewWorkshop({...newWorkshop, price: e.target.value})}
-                          placeholder="2000"
-                          className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-purple-900 mb-2">Duration</label>
-                        <input
-                          value={newWorkshop.duration}
-                          onChange={(e) => setNewWorkshop({...newWorkshop, duration: e.target.value})}
-                          placeholder="e.g., 2 hours, 3 days"
-                          className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-purple-900 mb-2">Mode</label>
-                        <select
-                          value={newWorkshop.mode}
-                          onChange={(e) => setNewWorkshop({...newWorkshop, mode: e.target.value})}
-                          className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        >
-                          <option>Online</option>
-                          <option>In-Person</option>
-                          <option>Hybrid</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-purple-900 mb-2">Max Participants</label>
-                        <input
-                          type="number"
-                          value={newWorkshop.maxParticipants}
-                          onChange={(e) => setNewWorkshop({...newWorkshop, maxParticipants: e.target.value})}
-                          placeholder="20"
-                          className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={handleAddWorkshop}
-                        className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200"
-                      >
-                        Create Workshop
-                      </button>
-                      <button
-                        onClick={() => setShowAddWorkshop(false)}
-                        className="px-6 py-2 border border-purple-300 text-purple-900 rounded-lg hover:bg-purple-50 transition-all duration-200"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* Workshops List */}
                 {myWorkshops.length === 0 ? (
@@ -477,7 +347,7 @@ function ArtistProfileDashboard() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {myWorkshops.map((workshop) => (
-                      <div key={workshop.id} className="border border-purple-100 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                      <div key={workshop._id} className="border border-purple-100 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                         <div className="h-40 bg-linear-to-br from-purple-200 to-pink-200 flex items-center justify-center">
                           <span className="text-5xl">🎨</span>
                         </div>
@@ -497,7 +367,7 @@ function ArtistProfileDashboard() {
                               Edit
                             </button>
                             <button 
-                              onClick={() => handleDeleteWorkshop(workshop.id)}
+                              onClick={() => handleDeleteWorkshop(workshop._id)}
                               className="px-3 py-2 border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50 transition-all duration-200"
                             >
                               Delete
