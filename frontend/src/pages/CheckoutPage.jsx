@@ -69,6 +69,24 @@ function CheckoutPage() {
 
     // Simulate payment processing
     setTimeout(() => {
+      // Save enrolled workshops to localStorage
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        if (user.email) {
+          const existingWorkshops = JSON.parse(localStorage.getItem(`workshops_${user.email}`) || '[]')
+          const newEnrolledWorkshops = cartItems.map(item => ({
+            ...item,
+            completed: false,
+            enrolledDate: new Date().toISOString()
+          }))
+          const allWorkshops = [...existingWorkshops, ...newEnrolledWorkshops]
+          localStorage.setItem(`workshops_${user.email}`, JSON.stringify(allWorkshops))
+        }
+        // Clear cart after enrollment
+        localStorage.removeItem('cart')
+      } catch (e) {
+        console.error('Error saving enrolled workshops:', e)
+      }
       setStep("confirmation")
       setLoading(false)
     }, 2000)
@@ -98,7 +116,7 @@ function CheckoutPage() {
             <p className="text-amber-800 mb-6">You have been enrolled in {cartItems.length} workshop(s).</p>
             <p className="text-sm text-amber-700 mb-6">Check your email for workshop details and access links.</p>
             <button
-              onClick={() => navigate('/learner/enrolled')}
+              onClick={() => navigate('/profile', { state: { tab: 'enrolled' } })}
               className="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-md font-medium transition-colors"
             >
               View My Workshops

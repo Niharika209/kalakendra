@@ -129,7 +129,8 @@ function CategoryDetailPage() {
     async function fetchWorkshops() {
       setLoading(true)
       try {
-        const resp = await axios.get(`/api/workshops/category/${categoryId}`)
+        // Fetch all workshops by setting a high limit (or you can add pagination later)
+        const resp = await axios.get(`/api/workshops/category/${categoryId}?limit=1000`)
         if (!cancelled) setWorkshops(Array.isArray(resp.data) ? resp.data : [])
       } catch (err) {
         // If backend returns 404 (no workshops/resource), treat as empty list instead of showing raw error
@@ -197,27 +198,57 @@ function CategoryDetailPage() {
             ))}
           </div>
 
-          {/* Workshops List */}
-          <div>
+          {/* Workshops List - Sorted by Date Descending */}
+          <div className="mt-12">
             {loading && <div className="py-8 text-center">Loading workshops…</div>}
 
             {!loading && workshops.length === 0 && (
-              <div className="py-8 text-center text-amber-700">No workshops available in {category.title}.</div>
+              <div className="py-12 text-center">
+                <div className="text-6xl mb-4">🎨</div>
+                <h3 className="text-2xl font-bold text-amber-900 mb-2">No Workshops Available Yet</h3>
+                <p className="text-amber-700">Check back soon for upcoming {category.title} workshops!</p>
+              </div>
             )}
 
             {!loading && workshops.length > 0 && (
               <>
-                <h2 className="text-2xl font-bold text-amber-900 mb-4">Workshops</h2>
+                <h2 className="text-3xl font-bold text-amber-900 mb-6 flex items-center">
+                  <span className="text-amber-600 mr-3">🎯</span>
+                  All {category.title} Workshops
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {workshops.map((w) => (
-                    <div key={w._id} className="p-4 bg-white rounded-lg border border-amber-100">
-                      <h3 className="font-semibold text-amber-900 mb-2">{w.title}</h3>
-                      <p className="text-sm text-amber-700 mb-2">By {w.artist?.name || 'Unknown'}</p>
-                      <p className="text-sm text-amber-700 mb-2">📅 {w.date ? new Date(w.date).toLocaleDateString() : '-'}</p>
-                      <p className="text-sm text-amber-700 mb-4">₹{w.price}</p>
-                      <div className="flex items-center gap-2">
-                        <Link to={`/artists/${w.artist?.slug || w.artist?._id}`} className="px-3 py-2 bg-amber-100 text-amber-900 rounded">View Artist</Link>
-                        <Link to={`/workshop/${w._id}`} className="px-3 py-2 border border-amber-200 rounded">View Workshop</Link>
+                  {workshops.sort((a, b) => new Date(b.date) - new Date(a.date)).map((w) => (
+                    <div key={w._id} className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-2xl transition-all border border-amber-100 hover:border-amber-300 overflow-hidden transform hover:scale-105 duration-200">
+                      <div className="p-6">
+                        <h3 className="text-xl font-bold text-[#45453e] mb-3">{w.title}</h3>
+                        <p className="text-sm text-amber-700 mb-2 flex items-center">
+                          <span className="mr-2">👤</span>
+                          By {w.artist?.name || 'Unknown'}
+                        </p>
+                        <p className="text-sm text-amber-700 mb-2 flex items-center">
+                          <span className="mr-2">📅</span>
+                          {w.date ? new Date(w.date).toLocaleDateString() : '-'}
+                        </p>
+                        <p className="text-sm text-amber-700 mb-2 flex items-center">
+                          <span className="mr-2">🌐</span>
+                          {w.mode || 'Online'}
+                        </p>
+                        <p className="text-lg font-bold text-amber-900 mb-4">₹{w.price}</p>
+                        <div className="flex items-center gap-2">
+                          <Link 
+                            to={`/workshop/${w._id}`} 
+                            className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-center font-semibold"
+                          >
+                            View Details
+                          </Link>
+                          <Link 
+                            to={`/artists/${w.artist?.slug || w.artist?._id}`} 
+                            className="px-4 py-2 border-2 border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition-colors font-medium"
+                            title="View Artist Profile"
+                          >
+                            Artist
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   ))}

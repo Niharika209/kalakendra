@@ -25,7 +25,15 @@ const workshopSchema = new mongoose.Schema({
   
   // Media
   imageUrl: { type: String },
-  thumbnailUrl: { type: String }
+  thumbnailUrl: { type: String },
+  
+  // Reviews
+  reviews: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Review"
+  }],
+  averageRating: { type: Number, default: 0 },
+  reviewCount: { type: Number, default: 0 }
 }, { timestamps: true });
 
 export default mongoose.model("Workshop", workshopSchema);
