@@ -3,6 +3,8 @@ import { useNavigate, Link, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
+import EnrolledWorkshopCard from '../components/EnrolledWorkshopCard'
+import CompletedWorkshopCard from '../components/CompletedWorkshopCard'
 import placeholderImage from '../assets/wave-background.svg'
 
 function ProfilePage() {
@@ -279,15 +281,18 @@ function ProfilePage() {
                     <div className="flex gap-3">
                       <button
                         onClick={() => setIsEditing(!isEditing)}
-                        className="px-4 py-2 border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition-all duration-200"
+                        className="group px-6 py-2.5 bg-white border-2 border-amber-200 text-amber-900 rounded-xl font-medium hover:bg-amber-50 hover:border-amber-300 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
                       >
+                        <svg className="w-5 h-5 text-amber-600 group-hover:text-amber-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
                         {isEditing ? 'Cancel' : 'Edit Profile'}
                       </button>
                       <button
                         onClick={handleLogout}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                        className="group px-6 py-2.5 bg-linear-to-r from-red-500 to-rose-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-rose-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 flex items-center gap-2"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                         Logout
@@ -436,36 +441,9 @@ function ProfilePage() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-4">
                     {enrolledWorkshops.map((workshop, idx) => (
-                      <div key={idx} className="border border-amber-100 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                        <div className="h-40 bg-linear-to-br from-amber-200 to-orange-200 flex items-center justify-center overflow-hidden">
-                          {workshop.image ? (
-                            <img src={workshop.image} alt={workshop.title} onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage }} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-5xl">🎨</span>
-                          )}
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-amber-900 mb-1">{workshop.title}</h3>
-                          <p className="text-sm text-amber-700 mb-2">By {workshop.artist || 'Unknown'}</p>
-                          <p className="text-xs text-amber-600 mb-3">
-                            📅 Enrolled • {workshop.quantity || 1} ticket(s)
-                          </p>
-                          <div className="flex gap-2">
-                            <Link to={`/workshop/${workshop.id}`} className="flex-1 text-center px-3 py-2 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700 transition-all duration-200">
-                              View Details
-                            </Link>
-                            <button 
-                              onClick={() => handleMarkComplete(workshop.id)}
-                              className="px-3 py-2 border border-green-600 text-green-600 rounded-lg text-sm hover:bg-green-50 transition-all duration-200"
-                              title="Mark as completed"
-                            >
-                              ✓
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                      <EnrolledWorkshopCard key={idx} workshop={workshop} />
                     ))}
                   </div>
                 )}
@@ -476,53 +454,31 @@ function ProfilePage() {
             {activeTab === 'completed' && (
               <div className="animate-fade-in">
                 {completedWorkshops.length === 0 ? (
-                  <div className="text-center py-12">
-                    <svg className="w-16 h-16 text-amber-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 className="text-xl font-semibold text-amber-900 mb-2">No completed workshops yet</h3>
-                    <p className="text-amber-700">Complete your enrolled workshops to see them here</p>
+                  <div className="text-center py-16 px-4">
+                    <div className="max-w-md mx-auto">
+                      <div className="w-24 h-24 mx-auto mb-6 bg-linear-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center animate-bounce">
+                        <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-2xl font-bold text-amber-900 mb-3">No Completed Workshops Yet</h3>
+                      <p className="text-amber-700 mb-6 leading-relaxed">Complete your enrolled workshops to unlock achievements and see them here!</p>
+                      <Link to="/profile" onClick={() => setActiveTab('enrolled')} className="inline-flex items-center gap-2 px-8 py-3 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        View Enrolled Workshops
+                      </Link>
+                    </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-4">
                     {completedWorkshops.map((workshop, idx) => (
-                      <div key={idx} className="border border-green-200 bg-white rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                        <div className="h-40 bg-linear-to-br from-green-200 to-emerald-200 flex items-center justify-center overflow-hidden relative">
-                          {workshop.image ? (
-                            <img src={workshop.image} alt={workshop.title} onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage }} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-5xl">🎨</span>
-                          )}
-                          <div className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
-                            Completed
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-gray-900 mb-1">{workshop.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2">By {workshop.artist || 'Unknown'}</p>
-                          <p className="text-xs text-green-700 mb-3">
-                            Completed {workshop.completedDate ? new Date(workshop.completedDate).toLocaleDateString() : 'recently'}
-                          </p>
-                          {workshop.reviewed ? (
-                            <div className="flex items-center gap-2 text-amber-600 text-sm mb-3">
-                              <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                              <span>Review Submitted</span>
-                            </div>
-                          ) : (
-                            <button 
-                              onClick={() => handleOpenReviewModal(workshop)}
-                              className="w-full mb-2 px-3 py-2 bg-linear-to-r from-amber-500 to-orange-500 text-white rounded-lg text-sm font-medium hover:from-amber-600 hover:to-orange-600 transition-all duration-200 shadow-md hover:shadow-lg"
-                            >
-                              Write Review
-                            </button>
-                          )}
-                          <Link to={`/workshop/${workshop.id}`} className="block text-center px-3 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-all duration-200">
-                            View Details
-                          </Link>
-                        </div>
-                      </div>
+                      <CompletedWorkshopCard 
+                        key={idx} 
+                        workshop={workshop}
+                        onReviewClick={handleOpenReviewModal}
+                      />
                     ))}
                   </div>
                 )}
