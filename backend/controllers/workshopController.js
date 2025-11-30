@@ -1,4 +1,5 @@
 import Workshop from "../models/Workshop.js";
+import { deleteFromCloudinary } from "../utils/cloudinaryHelper.js";
 
 // READ - Get workshops by artist ID
 export const getWorkshopsByArtist = async (req, res) => {
@@ -175,5 +176,62 @@ export const deleteWorkshop = async (req, res) => {
     res.json({ message: "Workshop deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// UPDATE - Update workshop image
+export const updateWorkshopImage = async (req, res) => {
+  try {
+    const { imageUrl, thumbnailUrl } = req.body;
+    
+    if (!imageUrl) {
+      return res.status(400).json({ error: "imageUrl is required" });
+    }
+
+    const workshop = await Workshop.findByIdAndUpdate(
+      req.params.id,
+      { imageUrl, thumbnailUrl: thumbnailUrl || imageUrl },
+      { new: true, runValidators: true }
+    );
+
+    if (!workshop) return res.status(404).json({ error: "Workshop not found" });
+    
+    res.json({ 
+      message: "Workshop image updated successfully", 
+      imageUrl: workshop.imageUrl,
+      thumbnailUrl: workshop.thumbnailUrl
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// DELETE - Delete workshop image
+export const deleteWorkshopImage = async (req, res) => {
+  try {
+    const workshop = await Workshop.findById(req.params.id);
+    if (!workshop) return res.status(404).json({ error: "Workshop not found" });
+    
+    // Delete from Cloudinary if URL exists
+    if (workshop.imageUrl) {
+      try {
+        await deleteFromCloudinary(workshop.imageUrl);
+        console.log('✅ Workshop image deleted from Cloudinary');
+      } catch (cloudinaryError) {
+        console.error('⚠️ Failed to delete from Cloudinary:', cloudinaryError);
+        // Continue anyway to update database
+      }
+    }
+    
+    // Update database
+    workshop.imageUrl = undefined;
+    workshop.thumbnailUrl = undefined;
+    await workshop.save();
+    
+    res.json({ 
+      message: "Workshop image deleted successfully"
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 };

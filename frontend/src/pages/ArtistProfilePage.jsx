@@ -16,6 +16,18 @@ function ArtistProfilePage() {
   const [artist, setArtist] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showImageModal, setShowImageModal] = useState(false)
+  const [selectedImage, setSelectedImage] = useState('')
+
+  const handleImageClick = (imageUrl) => {
+    setSelectedImage(imageUrl)
+    setShowImageModal(true)
+  }
+
+  const closeModal = () => {
+    setShowImageModal(false)
+    setSelectedImage('')
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -103,7 +115,7 @@ function ArtistProfilePage() {
     : Array.isArray(artist?.reviews)
       ? artist.reviews
       : []
-  const videos = Array.isArray(artist?.videos) ? artist.videos : []
+  const gallery = Array.isArray(artist?.gallery) ? artist.gallery : []
 
   return (
     <>
@@ -257,14 +269,14 @@ function ArtistProfilePage() {
               <div id="tabs-section" className="mb-12">
                 <div className="flex justify-around border-b border-amber-200 mb-8">
                   <button
-                    onClick={() => setActiveTab('videos')}
+                    onClick={() => setActiveTab('gallery')}
                     className={`pb-4 px-6 font-semibold transition-all ${
-                      activeTab === 'videos'
+                      activeTab === 'gallery'
                         ? 'border-b-2 border-yellow-500 text-amber-900'
                         : 'text-amber-600 hover:text-amber-900'
                     }`}
                   >
-                    Videos
+                    Artist's Gallery
                   </button>
                   <button
                     onClick={() => setActiveTab('testimonials')}
@@ -353,33 +365,51 @@ function ArtistProfilePage() {
                   </div>
                 )}
 
-                {/* Videos Tab */}
-                {activeTab === 'videos' && (
+                {/* Artist's Gallery Tab */}
+                {activeTab === 'gallery' && (
                   <div>
-                    <h2 className="text-2xl font-bold text-amber-900 mb-6">Performance Videos</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {videos.map((video) => (
-                        <div key={video._id || video.id} className="border border-amber-100 rounded-lg bg-white overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-                          <div className="relative">
-                            <img src={video.thumbnailUrl || video.thumbnail} alt={video.title} loading="lazy" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage }} className="w-full h-40 sm:h-48 md:h-56 object-center object-cover" />
-                            <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-sm">
-                              {video.duration}
-                            </div>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="bg-yellow-500 rounded-full p-4 hover:bg-yellow-600 transition-colors">
-                                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                                </svg>
+                    <h2 className="text-2xl font-bold text-amber-900 mb-6">Artist's Gallery</h2>
+                    {gallery.length === 0 ? (
+                      <div className="text-center py-12 text-amber-700">
+                        <p>No gallery items yet.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {gallery.map((item, idx) => (
+                          <div key={item._id || idx} className="border border-amber-100 rounded-lg bg-white overflow-hidden hover:shadow-lg transition-shadow">
+                            {item.type === 'video' ? (
+                              <div className="relative">
+                                <video 
+                                  controls 
+                                  className="w-full h-40 sm:h-48 md:h-56 object-cover bg-black"
+                                  onError={(e) => { e.target.style.display = 'none' }}
+                                >
+                                  <source src={item.url} type="video/mp4" />
+                                  Your browser does not support the video tag.
+                                </video>
                               </div>
-                            </div>
+                            ) : (
+                              <div className="relative cursor-pointer" onClick={() => handleImageClick(item.url)}>
+                                <img 
+                                  src={item.url} 
+                                  alt={`Gallery item ${idx + 1}`} 
+                                  loading="lazy" 
+                                  onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage }} 
+                                  className="w-full h-40 sm:h-48 md:h-56 object-cover hover:opacity-90 transition-opacity"
+                                />
+                              </div>
+                            )}
+                            {item.uploadedAt && (
+                              <div className="p-3">
+                                <p className="text-xs text-amber-600">
+                                  {new Date(item.uploadedAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            )}
                           </div>
-                          <div className="p-4">
-                            <h3 className="font-bold text-amber-900 mb-2">{video.title}</h3>
-                            <p className="text-sm text-amber-700">{(video.views||0).toLocaleString()} views</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -387,6 +417,27 @@ function ArtistProfilePage() {
           )}
         </div>
       </main>
+
+      {/* Image Lightbox Modal */}
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4" onClick={closeModal}>
+          <button
+            onClick={closeModal}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-50"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="relative w-auto max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={selectedImage}
+              alt="Gallery view"
+              className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </>
   )
 }

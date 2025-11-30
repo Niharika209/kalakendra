@@ -6,7 +6,9 @@ import {
   getWorkshopsByArtist,
   getWorkshopById, 
   updateWorkshop, 
-  deleteWorkshop 
+  deleteWorkshop,
+  updateWorkshopImage,
+  deleteWorkshopImage
 } from "../controllers/workshopController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -29,6 +31,12 @@ router.get("/:id", getWorkshopById);
 
 // UPDATE - Update workshop (requires authentication)
 router.put("/:id", protect, updateWorkshop);
+
+// UPDATE - Update workshop image (requires authentication)
+router.put("/:id/image", protect, updateWorkshopImage);
+
+// DELETE - Delete workshop image (requires authentication)
+router.delete("/:id/image", protect, deleteWorkshopImage);
 
 // DELETE - Delete workshop (requires authentication)
 router.delete("/:id", protect, deleteWorkshop);

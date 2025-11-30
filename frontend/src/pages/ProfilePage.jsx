@@ -3,16 +3,19 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import placeholderImage from '../assets/wave-background.svg'
+import { uploadImage, updateLearnerProfileImage, deleteLearnerProfileImage } from '../services/uploadService'
 
 function ProfilePage() {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout, updateUser } = useAuth()
   const [activeTab, setActiveTab] = useState('enrolled')
   const [enrolledWorkshops, setEnrolledWorkshops] = useState([])
   const [completedWorkshops, setCompletedWorkshops] = useState([])
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [profileImage, setProfileImage] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -22,6 +25,7 @@ function ProfilePage() {
       }
       setEditName(user.name || '')
       setEditEmail(user.email || '')
+      setProfileImage(user.profileImage || null)
     }
   }, [user, navigate])
 
@@ -76,6 +80,81 @@ function ProfilePage() {
     setIsEditing(false)
   }
 
+  const handleImageUpload = async (e) => {
+    console.log('🎯 handleImageUpload called')
+    const file = e.target.files?.[0]
+    console.log('📁 Selected file:', file)
+    if (!file) {
+      console.log('❌ No file selected')
+      return
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      console.log('❌ Invalid file type:', file.type)
+      alert('Please select an image file')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      console.log('❌ File too large:', file.size)
+      alert('Image size should be less than 5MB')
+      return
+    }
+
+    console.log('✅ File validation passed')
+    
+    try {
+      setUploading(true)
+      
+      console.log('🔄 Starting image upload...')
+      // Upload to Cloudinary
+      const uploadResult = await uploadImage(file)
+      console.log('✅ Image uploaded to Cloudinary:', uploadResult)
+      
+      // Update learner profile with new image URL
+      if (user.id || user._id) {
+        const userId = user.id || user._id
+        console.log('🔄 Updating learner profile with image:', userId, uploadResult.url)
+        const result = await updateLearnerProfileImage(userId, uploadResult.url)
+        console.log('✅ Profile image updated in database:', result)
+        setProfileImage(uploadResult.url)
+        console.log('✅ Local state updated')
+        updateUser({ profileImage: uploadResult.url })
+        console.log('✅ User context updated with profileImage:', uploadResult.url)
+        alert('Profile image updated successfully!')
+      } else {
+        console.error('❌ No user.id or user._id found:', user)
+        alert('Error: User ID not found')
+      }
+    } catch (error) {
+      console.error('❌ Upload error:', error)
+      alert('Failed to upload image: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDeleteProfileImage = async () => {
+    if (!window.confirm('Are you sure you want to delete your profile picture?')) return
+    
+    try {
+      setUploading(true)
+      const userId = user.id || user._id
+      
+      await deleteLearnerProfileImage(userId)
+      setProfileImage(null)
+      updateUser({ profileImage: null })
+      alert('Profile image deleted successfully!')
+    } catch (error) {
+      console.error('Delete error:', error)
+      alert('Failed to delete image: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const handleLogout = async () => {
     await logout()
     navigate('/')
@@ -104,8 +183,52 @@ function ProfilePage() {
             <div className="h-32 bg-linear-to-r from-amber-400 via-yellow-400 to-orange-400"></div>
             <div className="px-8 pb-8">
               <div className="flex items-end gap-6 -mt-16">
-                <div className="w-32 h-32 rounded-full bg-amber-600 text-white flex items-center justify-center text-5xl font-bold border-4 border-white shadow-xl transform transition-all duration-300 hover:scale-110">
-                  {initial}
+                <div className="relative">
+                  {profileImage ? (
+                    <img 
+                      src={profileImage} 
+                      alt={user.name}
+                      className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-xl"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-amber-600 text-white flex items-center justify-center text-5xl font-bold border-4 border-white shadow-xl">
+                      {initial}
+                    </div>
+                  )}
+                  {isEditing && (
+                    <>
+                      <label className="absolute bottom-0 left-0 w-10 h-10 bg-amber-600 rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-amber-700 transition-colors">
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          disabled={uploading}
+                        />
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </label>
+                      {profileImage && (
+                        <button
+                          onClick={handleDeleteProfileImage}
+                          disabled={uploading}
+                          className="absolute bottom-0 right-0 w-10 h-10 bg-red-600 rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                          title="Delete profile picture"
+                        >
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+                    </>
+                  )}
+                  {uploading && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 pt-20">
                   <div className="flex items-start justify-between">

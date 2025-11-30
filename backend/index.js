@@ -10,6 +10,7 @@ import artistRoutes from "./routes/artistRoutes.js";
 import learnerRoutes from "./routes/learnerRoutes.js";
 import workshopRoutes from "./routes/workshopRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
 
 // Import middleware
 import { errorHandler } from "./middleware/errorMiddleware.js";
@@ -49,6 +50,7 @@ app.use("/api/artists", artistRoutes);
 app.use("/api/learners", learnerRoutes);
 app.use("/api/workshops", workshopRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

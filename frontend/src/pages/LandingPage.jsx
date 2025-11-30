@@ -163,7 +163,7 @@ function LandingPage() {
           Your gateway to traditional and contemporary arts. Learn from master artists and explore your creative potential.
         </p>
         <a href="/artists" className="inline-block">
-          <button className="px-8 py-3 text-base md:text-lg font-bold text-[#45453e] bg-linear-to-r from-yellow-300 to-amber-400 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out flex items-center justify-center gap-2">
+          <button className="px-8 py-3 text-base md:text-lg font-bold text-white bg-amber-700 hover:bg-amber-800 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out flex items-center justify-center gap-2">
             Explore Artists
             <span className="text-xl">→</span>
           </button>

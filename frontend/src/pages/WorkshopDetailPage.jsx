@@ -10,6 +10,8 @@ function WorkshopDetailPage() {
   const [workshop, setWorkshop] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showImageModal, setShowImageModal] = useState(false)
+  const [selectedImage, setSelectedImage] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -55,6 +57,16 @@ function WorkshopDetailPage() {
     }
   }
 
+  const handleImageClick = (imageUrl) => {
+    setSelectedImage(imageUrl)
+    setShowImageModal(true)
+  }
+
+  const closeModal = () => {
+    setShowImageModal(false)
+    setSelectedImage(null)
+  }
+
   if (loading) return (<><Navbar /><div className="min-h-screen flex items-center justify-center">Loading workshop…</div></>)
   if (error) return (<><Navbar /><div className="min-h-screen flex items-center justify-center text-red-600">{error}</div></>)
   if (!workshop) return (<><Navbar /><div className="min-h-screen flex items-center justify-center">Workshop not found.</div></>)
@@ -71,7 +83,14 @@ function WorkshopDetailPage() {
               <h1 className="text-3xl font-bold text-amber-900 mb-3">{workshop.title}</h1>
               <p className="text-sm text-amber-700 mb-4">By {artist.name ? <Link to={`/artists/${artist.slug || artist._id}`}>{artist.name}</Link> : (workshop.artistName || 'Unknown')}</p>
               <div className="mb-6">
-                <img src={workshop.thumbnailUrl || workshop.imageUrl || placeholderImage} alt={workshop.title} loading="lazy" onError={(e)=>{e.target.onerror=null; e.target.src=placeholderImage}} className="w-full h-64 object-center object-cover rounded-lg" />
+                <img 
+                  src={workshop.thumbnailUrl || workshop.imageUrl || placeholderImage} 
+                  alt={workshop.title} 
+                  loading="lazy" 
+                  onError={(e)=>{e.target.onerror=null; e.target.src=placeholderImage}} 
+                  onClick={() => handleImageClick(workshop.imageUrl || workshop.thumbnailUrl || placeholderImage)}
+                  className="w-full h-64 object-center object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity" 
+                />
               </div>
               <div className="mb-6 bg-white p-6 rounded-lg border border-amber-100">
                 <h2 className="text-xl font-semibold text-amber-900 mb-2">About this workshop</h2>
@@ -178,6 +197,38 @@ function WorkshopDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Image Lightbox Modal */}
+      {showImageModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={closeModal}
+        >
+          <button
+            onClick={closeModal}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-50"
+            aria-label="Close"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div 
+            className="relative max-w-6xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedImage}
+              alt={workshop?.title || 'Workshop image'}
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              onError={(e)=>{e.target.onerror=null; e.target.src=placeholderImage}}
+            />
+          </div>
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black bg-opacity-50 px-4 py-2 rounded-full">
+            Click anywhere to close
+          </div>
+        </div>
+      )}
     </>
   )
 }

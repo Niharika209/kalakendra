@@ -210,14 +210,26 @@ function CategoryDetailPage() {
                 <h2 className="text-2xl font-bold text-amber-900 mb-4">Workshops</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {workshops.map((w) => (
-                    <div key={w._id} className="p-4 bg-white rounded-lg border border-amber-100">
-                      <h3 className="font-semibold text-amber-900 mb-2">{w.title}</h3>
+                    <div key={w._id} className="bg-white rounded-lg border border-amber-100 overflow-hidden hover:shadow-lg transition-all">
+                      {(w.thumbnailUrl || w.imageUrl) && (
+                        <div className="h-48 overflow-hidden">
+                          <img 
+                            src={w.thumbnailUrl || w.imageUrl} 
+                            alt={w.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => e.target.style.display = 'none'}
+                          />
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <h3 className="font-semibold text-amber-900 mb-2">{w.title}</h3>
                       <p className="text-sm text-amber-700 mb-2">By {w.artist?.name || 'Unknown'}</p>
                       <p className="text-sm text-amber-700 mb-2">📅 {w.date ? new Date(w.date).toLocaleDateString() : '-'}</p>
-                      <p className="text-sm text-amber-700 mb-4">₹{w.price}</p>
-                      <div className="flex items-center gap-2">
-                        <Link to={`/artists/${w.artist?.slug || w.artist?._id}`} className="px-3 py-2 bg-amber-100 text-amber-900 rounded">View Artist</Link>
-                        <Link to={`/workshop/${w._id}`} className="px-3 py-2 border border-amber-200 rounded">View Workshop</Link>
+                        <p className="text-sm text-amber-700 mb-4">₹{w.price}</p>
+                        <div className="flex items-center gap-2">
+                          <Link to={`/artists/${w.artist?.slug || w.artist?._id}`} className="px-3 py-2 bg-amber-100 text-amber-900 rounded">View Artist</Link>
+                          <Link to={`/workshop/${w._id}`} className="px-3 py-2 border border-amber-200 rounded">View Workshop</Link>
+                        </div>
                       </div>
                     </div>
                   ))}

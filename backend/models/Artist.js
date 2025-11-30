@@ -18,7 +18,11 @@ const artistSchema = new mongoose.Schema({
   // Images and media
   imageUrl: { type: String, default: null },        // full profile image (absolute URL)
   thumbnailUrl: { type: String, default: null },    // small thumb for cards
-  gallery: [{ type: String }],                      // additional image URLs
+  gallery: [{                                       // gallery items (images and videos)
+    url: { type: String, required: false },  // Not required to avoid validation issues with partial data
+    type: { type: String, enum: ['image', 'video'], default: 'image' },
+    uploadedAt: { type: Date, default: Date.now }
+  }],
   imageMetadata: {
     width: Number,
     height: Number,

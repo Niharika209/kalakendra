@@ -1,5 +1,6 @@
 import Artist from "../models/Artist.js";
 import Workshop from "../models/Workshop.js";
+import { deleteFromCloudinary } from "../utils/cloudinaryHelper.js";
 
 // READ - Get artist by email
 export const getArtistByEmail = async (req, res) => {
@@ -118,5 +119,122 @@ export const loginArtist = async (req, res) => {
     res.json({ message: "Login successful", artist });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// UPDATE - Update artist profile image
+export const updateArtistProfileImage = async (req, res) => {
+  try {
+    const { imageUrl, thumbnailUrl } = req.body;
+    
+    if (!imageUrl) {
+      return res.status(400).json({ error: "imageUrl is required" });
+    }
+
+    const artist = await Artist.findByIdAndUpdate(
+      req.params.id,
+      { imageUrl, thumbnailUrl: thumbnailUrl || imageUrl },
+      { new: true, runValidators: true }
+    );
+
+    if (!artist) return res.status(404).json({ error: "Artist not found" });
+    
+    res.json({ 
+      message: "Profile image updated successfully", 
+      imageUrl: artist.imageUrl,
+      thumbnailUrl: artist.thumbnailUrl
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// DELETE - Delete artist profile image
+export const deleteArtistProfileImage = async (req, res) => {
+  try {
+    const artist = await Artist.findById(req.params.id);
+    if (!artist) return res.status(404).json({ error: "Artist not found" });
+    
+    // Delete from Cloudinary if URL exists
+    if (artist.imageUrl) {
+      try {
+        await deleteFromCloudinary(artist.imageUrl);
+        console.log('✅ Image deleted from Cloudinary');
+      } catch (cloudinaryError) {
+        console.error('⚠️ Failed to delete from Cloudinary:', cloudinaryError);
+        // Continue anyway to update database
+      }
+    }
+    
+    // Update database
+    artist.imageUrl = undefined;
+    artist.thumbnailUrl = undefined;
+    await artist.save();
+    
+    res.json({ 
+      message: "Profile image deleted successfully"
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// UPDATE - Add media (images/videos) to artist gallery
+export const addToArtistGallery = async (req, res) => {
+  try {
+    const { mediaItems } = req.body;
+    
+    if (!mediaItems || !Array.isArray(mediaItems) || mediaItems.length === 0) {
+      return res.status(400).json({ error: "mediaItems array is required" });
+    }
+
+    const artist = await Artist.findByIdAndUpdate(
+      req.params.id,
+      { $push: { gallery: { $each: mediaItems } } },
+      { new: true, runValidators: true }
+    );
+
+    if (!artist) return res.status(404).json({ error: "Artist not found" });
+    
+    res.json({ 
+      message: "Gallery media added successfully", 
+      gallery: artist.gallery
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// DELETE - Remove media from artist gallery
+export const removeFromArtistGallery = async (req, res) => {
+  try {
+    const { mediaUrl } = req.body;
+    
+    if (!mediaUrl) {
+      return res.status(400).json({ error: "mediaUrl is required" });
+    }
+
+    const artist = await Artist.findById(req.params.id);
+    if (!artist) return res.status(404).json({ error: "Artist not found" });
+    
+    // Delete from Cloudinary
+    try {
+      await deleteFromCloudinary(mediaUrl);
+      console.log('✅ Gallery item deleted from Cloudinary');
+    } catch (cloudinaryError) {
+      console.error('⚠️ Failed to delete from Cloudinary:', cloudinaryError);
+      // Continue anyway to update database
+    }
+    
+    // Remove from database
+    artist.gallery = artist.gallery.filter(item => item.url !== mediaUrl);
+    await artist.save();
+    
+    res.json({ 
+      message: "Gallery media removed successfully", 
+      gallery: artist.gallery
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 };

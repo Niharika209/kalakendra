@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
+import { uploadImage } from '../services/uploadService'
 
 const API_URL = 'http://localhost:5000/api'
 
@@ -14,6 +15,8 @@ function CreateWorkshopPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [workshopImage, setWorkshopImage] = useState(null)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -132,11 +135,55 @@ function CreateWorkshopPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB')
+      return
+    }
+
+    try {
+      setUploading(true)
+      const uploadResult = await uploadImage(file)
+      setWorkshopImage(uploadResult.url)
+      alert('Workshop image uploaded successfully!')
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload image: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const handleSubmit = async () => {
-    if (!validateStep() || !artistData || !accessToken) {
-      if (!accessToken) {
-        setError('You must be logged in to create a workshop')
-      }
+    console.log('Submit clicked - Checking validation...')
+    console.log('User:', user)
+    console.log('AccessToken:', accessToken)
+    console.log('ArtistData:', artistData?._id)
+    
+    if (!user) {
+      setError('You must be logged in to create a workshop')
+      return
+    }
+
+    if (!artistData) {
+      setError('Artist data not loaded. Please refresh the page.')
+      return
+    }
+
+    if (!validateStep()) {
+      return
+    }
+
+    if (!accessToken) {
+      setError('Session expired. Please log out and log in again.')
       return
     }
 
@@ -163,7 +210,9 @@ function CreateWorkshopPage() {
         whatYouWillLearn: formData.whatYouWillLearn,
         targetAudience: formData.targetAudience,
         materialProvided: formData.materialProvided,
-        certificateProvided: formData.certificateProvided
+        certificateProvided: formData.certificateProvided,
+        imageUrl: workshopImage || undefined,
+        thumbnailUrl: workshopImage || undefined
       }
 
       console.log('📤 Sending workshop data:', workshopData)
@@ -571,6 +620,55 @@ function CreateWorkshopPage() {
             {/* Step 4: Additional Details */}
             {currentStep === 4 && (
               <div className="space-y-6 animate-slide-in">
+                <div>
+                  <label className="flex items-center text-sm font-bold text-gray-700 mb-2">
+                    <span className="text-purple-600 mr-2">🖼️</span>
+                    Workshop Image (Optional)
+                  </label>
+                  <div className="flex items-center gap-4">
+                    {workshopImage ? (
+                      <div className="relative w-48 h-32">
+                        <img 
+                          src={workshopImage} 
+                          alt="Workshop preview"
+                          className="w-full h-full object-cover rounded-lg border-2 border-purple-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setWorkshopImage(null)}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center w-48 h-32 border-2 border-dashed border-purple-300 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition-all">
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          disabled={uploading}
+                        />
+                        {uploading ? (
+                          <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <>
+                            <svg className="w-10 h-10 text-purple-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-sm text-purple-600">Upload Image</span>
+                          </>
+                        )}
+                      </label>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      Add an attractive image for your workshop<br/>
+                      (Max 5MB, JPG/PNG/WebP)
+                    </p>
+                  </div>
+                </div>
+
                 <div>
                   <label className="flex items-center text-sm font-bold text-gray-700 mb-2">
                     <span className="text-purple-600 mr-2">📚</span>

@@ -5,6 +5,7 @@ const learnerSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true }, // hashed later
   location: { type: String, required: true },
+  profileImage: { type: String, default: null }, // Cloudinary URL
   refreshTokens: { type: [String], default: [] }
 }, { timestamps: true });
 

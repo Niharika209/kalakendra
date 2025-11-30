@@ -10,23 +10,7 @@ function Navbar() {
 
   const handleExploreArtists = (e) => {
     e.preventDefault()
-    
-    // If on home page, scroll to section
-    if (location.pathname === '/') {
-      const section = document.getElementById('featured-artists')
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth' })
-      }
-    } else {
-      // Navigate to home page first, then scroll
-      navigate('/')
-      setTimeout(() => {
-        const section = document.getElementById('featured-artists')
-        if (section) {
-          section.scrollIntoView({ behavior: 'smooth' })
-        }
-      }, 100)
-    }
+    navigate('/artists')
     setIsOpen(false)
   }
 
@@ -44,10 +28,31 @@ function Navbar() {
 
   const ProfileButton = () => {
     const initial = (user?.name || 'U')[0].toUpperCase()
+    const profileImageUrl = user?.role === 'artist' ? user?.imageUrl : user?.profileImage
+    
+    console.log('👤 Navbar ProfileButton:', { 
+      role: user?.role, 
+      imageUrl: user?.imageUrl, 
+      profileImage: user?.profileImage,
+      computed: profileImageUrl 
+    })
+    
     return (
       <Link to="/profile">
-        <button className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center font-semibold hover:bg-amber-700 transition-all duration-200 transform hover:scale-110">
-          {initial}
+        <button className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center font-semibold hover:bg-amber-700 transition-all duration-200 transform hover:scale-110 overflow-hidden">
+          {profileImageUrl ? (
+            <img 
+              src={profileImageUrl} 
+              alt={user?.name} 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error('❌ Image failed to load:', profileImageUrl)
+                e.target.style.display = 'none'
+              }}
+            />
+          ) : (
+            initial
+          )}
         </button>
       </Link>
     )
