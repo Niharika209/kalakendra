@@ -12,8 +12,9 @@ import {
   addToArtistGallery,
   removeFromArtistGallery 
 } from '../services/uploadService'
+import { API_BASE_URL } from '../config/api.js'
 
-const API_URL = 'http://localhost:5000/api'
+const API_URL = API_BASE_URL
 
 function ArtistProfileDashboard() {
   const navigate = useNavigate()

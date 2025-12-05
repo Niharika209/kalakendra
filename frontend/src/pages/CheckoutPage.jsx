@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
+import { API_BASE_URL, RAZORPAY_KEY_ID } from '../config/api.js'
 
-const API_URL = 'http://localhost:5000/api'
+const API_URL = API_BASE_URL
 
 // Cart is persisted in localStorage under key 'cart'. Start with stored cart or empty array.
 
@@ -77,13 +78,13 @@ function CheckoutPage() {
       
       const { id: order_id, amount, currency } = response.data
 
-      console.log('Razorpay Key:', import.meta.env.VITE_RAZORPAY_KEY_ID);
+      console.log('Razorpay Key:', RAZORPAY_KEY_ID);
       console.log('Order ID:', order_id);
       console.log('Amount:', amount, 'Currency:', currency);
 
       // Set up Razorpay options - Minimal config for maximum compatibility
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: RAZORPAY_KEY_ID,
         amount: amount,
         currency: currency,
         name: "KalaKendra",

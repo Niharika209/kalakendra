@@ -4,8 +4,9 @@ import axios from 'axios'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 import { uploadImage } from '../services/uploadService'
+import { API_BASE_URL } from '../config/api.js'
 
-const API_URL = 'http://localhost:5000/api'
+const API_URL = API_BASE_URL
 
 function CreateWorkshopPage() {
   const navigate = useNavigate()

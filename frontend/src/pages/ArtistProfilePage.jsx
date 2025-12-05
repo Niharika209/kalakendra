@@ -8,8 +8,9 @@ import ashaImage from '../assets/asha.png'
 import karanImage from '../assets/karan.png'
 import vikramImage from '../assets/vikram.png'
 import placeholderImage from '../assets/wave-background.svg'
+import { API_BASE_URL } from '../config/api.js'
 
-const API_URL = 'http://localhost:5000/api'
+const API_URL = API_BASE_URL
 
 function ArtistProfilePage() {
   const { id } = useParams()
