@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import axios from 'axios'
 import Navbar from '../components/Navbar'
 import ArtistCard from '../components/ArtistCard'
-import Footer from '../components/Footer'
 import danceImage from '../assets/dance-art.jpg'
 import sitarImage from '../assets/sitar.png'
 import paintingImage from '../assets/painting.png'
@@ -163,7 +162,7 @@ function LandingPage() {
           Your gateway to traditional and contemporary arts. Learn from master artists and explore your creative potential.
         </p>
         <a href="/artists" className="inline-block">
-          <button className="px-8 py-3 text-base md:text-lg font-bold text-[#45453e] bg-linear-to-r from-yellow-300 to-amber-400 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out flex items-center justify-center gap-2">
+          <button className="px-8 py-3 text-base md:text-lg font-bold text-white bg-amber-700 hover:bg-amber-800 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out flex items-center justify-center gap-2">
             Explore Artists
             <span className="text-xl">→</span>
           </button>
@@ -215,7 +214,10 @@ function LandingPage() {
       </section>
 
       {/* Featured Artists Section */}
-      <section id="featured-artists" className="min-h-screen py-20 px-6 flex items-center justify-center bg-linear-to-b from-yellow-100 to-yellow-200">
+      <section 
+        id="featured-artists" 
+        className="min-h-screen py-20 px-6 flex items-center justify-center bg-linear-to-b from-yellow-100 to-yellow-200"
+      >
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 bg-linear-to-br from-amber-700 to-yellow-600 bg-clip-text text-transparent drop-shadow-md tracking-tight leading-tight text-center">
             Featured Artists
@@ -250,9 +252,6 @@ function LandingPage() {
           )}
         </div>
       </section>
-
-      {/* Footer */}
-      <Footer />
     </>
   )
 }

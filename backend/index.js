@@ -12,6 +12,8 @@ import workshopRoutes from "./routes/workshopRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+import searchRoutes from "./routes/searchRoutes.js";
 
 // Import middleware
 import { errorHandler } from "./middleware/errorMiddleware.js";
@@ -53,9 +55,31 @@ app.use("/api/workshops", workshopRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/search", searchRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
+
+// Start background jobs for search index maintenance (production only)
+if (process.env.NODE_ENV === 'production' || process.env.ENABLE_SEARCH_JOBS === 'true') {
+  import('./jobs/searchJobs.js').then(({ startAllJobs, stopAllJobs }) => {
+    startAllJobs();
+    console.log('✅ Search background jobs started');
+    
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      console.log('🛑 SIGTERM received, shutting down gracefully...');
+      stopAllJobs();
+      mongoose.connection.close(() => {
+        console.log('MongoDB connection closed');
+        process.exit(0);
+      });
+    });
+  }).catch(err => {
+    console.warn('⚠️ Search jobs not started:', err.message);
+  });
+}
 
 // Start server
 const PORT = process.env.PORT || 5000;

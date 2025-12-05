@@ -1,7 +1,9 @@
 import './App.css'
 import { Routes, Route } from 'react-router-dom'
+import ScrollToTop from './components/ScrollToTop'
 import PrivateRoute from './components/PrivateRoute'
 import LandingPage from './pages/LandingPage'
+import AboutPage from './pages/AboutPage'
 import WorkshopsListPage from './pages/WorkshopsListPage'
 import CategoryDetailPage from './pages/CategoryDetailPage'
 import SubcategoryDetailPage from './pages/SubcategoryDetailPage'
@@ -17,21 +19,25 @@ import CreateWorkshopPage from './pages/CreateWorkshopPage'
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/workshops" element={<WorkshopsListPage />} />
-      <Route path="/workshops/:categoryId" element={<CategoryDetailPage />} />
-      <Route path="/workshops/:categoryId/:subcategoryName" element={<SubcategoryDetailPage />} />
-      <Route path="/artists" element={<ArtistsListPage />} />
-      <Route path="/artists/:id" element={<ArtistProfilePage />} />
-      <Route path="/workshop/:id" element={<WorkshopDetailPage />} />
-      <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-      <Route path="/artist-dashboard" element={<PrivateRoute requiredRole="artist"><ArtistProfileDashboard /></PrivateRoute>} />
-      <Route path="/create-workshop" element={<PrivateRoute requiredRole="artist"><CreateWorkshopPage /></PrivateRoute>} />
-      <Route path="/checkout" element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
-      <Route path="/auth/login" element={<LoginPage />} />
-      <Route path="/auth/signup" element={<SignupPage />} />
-    </Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/workshops" element={<WorkshopsListPage />} />
+        <Route path="/workshops/:categoryId" element={<CategoryDetailPage />} />
+        <Route path="/workshops/:categoryId/:subcategoryName" element={<SubcategoryDetailPage />} />
+        <Route path="/artists" element={<ArtistsListPage />} />
+        <Route path="/artists/:id" element={<ArtistProfilePage />} />
+        <Route path="/workshop/:id" element={<WorkshopDetailPage />} />
+        <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        <Route path="/artist-dashboard" element={<PrivateRoute requiredRole="artist"><ArtistProfileDashboard /></PrivateRoute>} />
+        <Route path="/create-workshop" element={<PrivateRoute requiredRole="artist"><CreateWorkshopPage /></PrivateRoute>} />
+        <Route path="/checkout" element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
+        <Route path="/auth/login" element={<LoginPage />} />
+        <Route path="/auth/signup" element={<SignupPage />} />
+      </Routes>
+    </>
   )
 }
 

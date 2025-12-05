@@ -13,6 +13,8 @@ function WorkshopDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [enrolledWorkshop, setEnrolledWorkshop] = useState(null)
+  const [showImageModal, setShowImageModal] = useState(false)
+  const [selectedImage, setSelectedImage] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -96,6 +98,16 @@ function WorkshopDetailPage() {
     }
   }
 
+  const handleImageClick = (imageUrl) => {
+    setSelectedImage(imageUrl)
+    setShowImageModal(true)
+  }
+
+  const closeModal = () => {
+    setShowImageModal(false)
+    setSelectedImage(null)
+  }
+
   if (loading) return (
     <>
       <Navbar />
@@ -161,7 +173,8 @@ function WorkshopDetailPage() {
             alt={workshop.title} 
             loading="lazy" 
             onError={(e)=>{e.target.onerror=null; e.target.src=placeholderImage}} 
-            className="w-full h-full object-cover"
+            onClick={() => handleImageClick(workshop.imageUrl || workshop.thumbnailUrl || placeholderImage)}
+            className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent"></div>
           
@@ -435,6 +448,38 @@ function WorkshopDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Image Lightbox Modal */}
+      {showImageModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={closeModal}
+        >
+          <button
+            onClick={closeModal}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-50"
+            aria-label="Close"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div 
+            className="relative max-w-6xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedImage}
+              alt={workshop?.title || 'Workshop image'}
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              onError={(e)=>{e.target.onerror=null; e.target.src=placeholderImage}}
+            />
+          </div>
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black bg-opacity-50 px-4 py-2 rounded-full">
+            Click anywhere to close
+          </div>
+        </div>
+      )}
     </>
   )
 }

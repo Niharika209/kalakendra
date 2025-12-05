@@ -9,6 +9,7 @@ function SubcategoryDetailPage() {
   const [workshops, setWorkshops] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
 
   // Convert URL slug back to readable name
   const displayName = subcategoryName
@@ -40,9 +41,24 @@ function SubcategoryDetailPage() {
     return () => { cancelled = true }
   }, [categoryId, subcategoryName])
 
+  // Filter workshops based on search term
+  const filteredWorkshops = workshops.filter(w => {
+    if (!searchTerm) return true
+    const search = searchTerm.toLowerCase()
+    return (
+      w.title?.toLowerCase().includes(search) ||
+      w.description?.toLowerCase().includes(search) ||
+      w.artist?.name?.toLowerCase().includes(search)
+    )
+  })
+
   return (
     <>
-      <Navbar />
+      <Navbar 
+        searchTerm={searchTerm} 
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search workshops..."
+      />
       <div className="min-h-screen pt-16 px-6 bg-linear-to-b from-amber-50 to-yellow-50">
         <div className="max-w-7xl mx-auto pb-20">
           {/* Header */}
@@ -53,6 +69,11 @@ function SubcategoryDetailPage() {
             <p className="text-lg md:text-xl text-[#45453e]/80 mb-4">
               Find the perfect artist for {displayName}
             </p>
+            {searchTerm && (
+              <p className="text-amber-700 mb-2">
+                Found {filteredWorkshops.length} workshop{filteredWorkshops.length !== 1 ? 's' : ''} matching "{searchTerm}"
+              </p>
+            )}
             <Link 
               to={`/workshops/${categoryId}`}
               className="text-amber-600 hover:text-amber-700 font-semibold"
@@ -71,11 +92,14 @@ function SubcategoryDetailPage() {
 
           {/* Workshops Grid */}
           {loading && <div className="py-8 text-center">Loading workshops…</div>}
-          {!loading && workshops.length === 0 && (
+          {!loading && filteredWorkshops.length === 0 && !searchTerm && (
             <div className="py-8 text-center text-amber-700">No workshops available for {displayName}.</div>
           )}
+          {!loading && filteredWorkshops.length === 0 && searchTerm && (
+            <div className="py-8 text-center text-amber-700">No workshops found matching "{searchTerm}".</div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {workshops.map((w) => (
+            {filteredWorkshops.map((w) => (
               <div key={w._id} className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg transition-all border border-amber-100 overflow-hidden">
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-[#45453e] mb-2">{w.title}</h3>

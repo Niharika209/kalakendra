@@ -97,7 +97,8 @@ async function register(req, res) {
         id: profile._id, 
         name: profile.name, 
         email: profile.email, 
-        role: userRole 
+        role: userRole,
+        ...(userRole === 'artist' ? { imageUrl: profile.imageUrl } : { profileImage: profile.profileImage })
       } 
     });
   } catch (err) {
@@ -151,7 +152,23 @@ async function login(req, res) {
     const tokenPayload = { id: profile._id, role: userRole };
     const { accessToken, refreshToken } = generateTokens(tokenPayload);
     profile.refreshTokens.push(refreshToken);
-    await profile.save();
+    
+    // Clean up gallery array if it's an artist - remove any items with undefined/null URLs
+    if (userRole === 'artist' && profile.gallery) {
+      const validGalleryItems = profile.gallery.filter(item => item && item.url);
+      // Update directly in database to avoid validation issues
+      await Artist.findByIdAndUpdate(
+        profile._id,
+        { 
+          gallery: validGalleryItems,
+          $push: { refreshTokens: refreshToken }
+        },
+        { runValidators: false }
+      );
+      profile.gallery = validGalleryItems;
+    } else {
+      await profile.save();
+    }
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
@@ -167,7 +184,8 @@ async function login(req, res) {
         id: profile._id, 
         name: profile.name, 
         email: profile.email, 
-        role: userRole 
+        role: userRole,
+        ...(userRole === 'artist' ? { imageUrl: profile.imageUrl } : { profileImage: profile.profileImage })
       } 
     });
   } catch (err) {
@@ -206,6 +224,12 @@ async function refresh(req, res) {
     // Remove old refresh token and add new one
     profile.refreshTokens = profile.refreshTokens.filter(t => t !== refreshToken);
     profile.refreshTokens.push(newRefreshToken);
+    
+    // Clean up gallery array if it's an artist - remove any items with undefined/null URLs
+    if (userRole === 'artist' && profile.gallery) {
+      profile.gallery = profile.gallery.filter(item => item && item.url);
+    }
+    
     await profile.save();
 
     res.cookie('refreshToken', newRefreshToken, {
@@ -220,7 +244,8 @@ async function refresh(req, res) {
         id: profile._id, 
         name: profile.name, 
         email: profile.email, 
-        role: userRole 
+        role: userRole,
+        ...(userRole === 'artist' ? { imageUrl: profile.imageUrl } : { profileImage: profile.profileImage })
       } 
     });
   } catch (err) {

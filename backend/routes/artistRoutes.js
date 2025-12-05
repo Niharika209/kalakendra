@@ -7,7 +7,11 @@ import {
   getArtistById,
   getArtistByEmail, 
   updateArtist, 
-  deleteArtist 
+  deleteArtist,
+  updateArtistProfileImage,
+  deleteArtistProfileImage,
+  addToArtistGallery,
+  removeFromArtistGallery
 } from "../controllers/artistController.js";
 
 const router = express.Router();
@@ -29,6 +33,18 @@ router.get("/:id", getArtistById);
 
 // UPDATE - Update artist
 router.put("/:id", updateArtist);
+
+// UPDATE - Update artist profile image
+router.put("/:id/profile-image", updateArtistProfileImage);
+
+// DELETE - Delete artist profile image
+router.delete("/:id/profile-image", deleteArtistProfileImage);
+
+// UPDATE - Add images to gallery
+router.post("/:id/gallery", addToArtistGallery);
+
+// DELETE - Remove image from gallery
+router.delete("/:id/gallery", removeFromArtistGallery);
 
 // DELETE - Delete artist
 router.delete("/:id", deleteArtist);

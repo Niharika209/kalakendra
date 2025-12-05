@@ -4,12 +4,20 @@ import { useAuth } from '../context/AuthContext'
 import axios from 'axios'
 import Navbar from '../components/Navbar'
 import placeholderImage from '../assets/wave-background.svg'
+import { 
+  uploadImage, 
+  uploadMultipleImages,
+  updateArtistProfileImage,
+  deleteArtistProfileImage, 
+  addToArtistGallery,
+  removeFromArtistGallery 
+} from '../services/uploadService'
 
 const API_URL = 'http://localhost:5000/api'
 
 function ArtistProfileDashboard() {
   const navigate = useNavigate()
-  const { user, logout, accessToken } = useAuth()
+  const { user, logout, accessToken, updateUser } = useAuth()
   const [activeTab, setActiveTab] = useState('workshops')
   const [myWorkshops, setMyWorkshops] = useState([])
   const [artistData, setArtistData] = useState(null)
@@ -20,6 +28,10 @@ function ArtistProfileDashboard() {
   const [editEmail, setEditEmail] = useState('')
   const [editBio, setEditBio] = useState('')
   const [editSpeciality, setEditSpeciality] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadingGallery, setUploadingGallery] = useState(false)
+  const [showImageModal, setShowImageModal] = useState(false)
+  const [selectedImage, setSelectedImage] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -89,9 +101,130 @@ function ArtistProfileDashboard() {
     }
   }
 
+  const handleProfileImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB')
+      return
+    }
+
+    try {
+      setUploading(true)
+      const uploadResult = await uploadImage(file)
+      
+      if (artistData?._id) {
+        await updateArtistProfileImage(artistData._id, uploadResult.url)
+        setArtistData({ ...artistData, imageUrl: uploadResult.url })
+        updateUser({ imageUrl: uploadResult.url })
+        alert('Profile image updated successfully!')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload image: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDeleteProfileImage = async () => {
+    if (!window.confirm('Are you sure you want to delete your profile picture?')) return
+    
+    try {
+      setUploading(true)
+      
+      if (artistData?._id) {
+        await deleteArtistProfileImage(artistData._id)
+        setArtistData({ ...artistData, imageUrl: null, thumbnailUrl: null })
+        updateUser({ imageUrl: null })
+        alert('Profile image deleted successfully!')
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      alert('Failed to delete image: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleGalleryUpload = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    if (files.length > 10) {
+      alert('You can upload maximum 10 files at once')
+      return
+    }
+
+    const invalidFiles = files.filter(f => !f.type.startsWith('image/') && !f.type.startsWith('video/'))
+    if (invalidFiles.length > 0) {
+      alert('Please select only image or video files')
+      return
+    }
+
+    try {
+      setUploadingGallery(true)
+      const uploadResult = await uploadMultipleImages(files)
+      
+      console.log('Upload result:', uploadResult)
+      
+      if (artistData?._id) {
+        const mediaItems = uploadResult.files.map((f, idx) => ({
+          url: f.url,
+          type: files[idx].type.startsWith('video/') ? 'video' : 'image'
+        }))
+        console.log('Media items to add:', mediaItems)
+        
+        const result = await addToArtistGallery(artistData._id, mediaItems)
+        console.log('Gallery update result:', result)
+        
+        setArtistData({ ...artistData, gallery: result.gallery })
+        const imageCount = mediaItems.filter(m => m.type === 'image').length
+        const videoCount = mediaItems.filter(m => m.type === 'video').length
+        alert(`Added ${imageCount} image(s) and ${videoCount} video(s) to gallery!`)
+      }
+    } catch (error) {
+      console.error('Gallery upload error:', error)
+      alert('Failed to upload gallery images: ' + error.message)
+    } finally {
+      setUploadingGallery(false)
+    }
+  }
+
+  const handleRemoveGalleryImage = async (imageUrl) => {
+    if (!window.confirm('Remove this image from gallery?')) return
+
+    try {
+      if (artistData?._id) {
+        const result = await removeFromArtistGallery(artistData._id, imageUrl)
+        setArtistData({ ...artistData, gallery: result.gallery })
+        alert('Image removed from gallery')
+      }
+    } catch (error) {
+      console.error('Remove gallery image error:', error)
+      alert('Failed to remove image: ' + error.message)
+    }
+  }
+
   const handleLogout = async () => {
     await logout()
     navigate('/')
+  }
+
+  const handleImageClick = (imageUrl) => {
+    setSelectedImage(imageUrl)
+    setShowImageModal(true)
+  }
+
+  const closeModal = () => {
+    setShowImageModal(false)
+    setSelectedImage(null)
   }
 
   if (!user) {
@@ -119,8 +252,52 @@ function ArtistProfileDashboard() {
             <div className="h-32 bg-linear-to-r from-purple-400 via-pink-400 to-amber-400"></div>
             <div className="px-8 pb-8">
               <div className="flex items-end gap-6 -mt-16">
-                <div className="w-32 h-32 rounded-full bg-purple-600 text-white flex items-center justify-center text-5xl font-bold border-4 border-white shadow-xl transform transition-all duration-300 hover:scale-110">
-                  {initial}
+                <div className="relative">
+                  {artistData?.imageUrl ? (
+                    <img 
+                      src={artistData.imageUrl} 
+                      alt={user.name}
+                      className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-xl"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-purple-600 text-white flex items-center justify-center text-5xl font-bold border-4 border-white shadow-xl">
+                      {initial}
+                    </div>
+                  )}
+                  {isEditing && (
+                    <>
+                      <label className="absolute bottom-0 left-0 w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-purple-700 transition-colors">
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleProfileImageUpload}
+                          className="hidden"
+                          disabled={uploading}
+                        />
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </label>
+                      {artistData?.imageUrl && (
+                        <button
+                          onClick={handleDeleteProfileImage}
+                          disabled={uploading}
+                          className="absolute bottom-0 right-0 w-10 h-10 bg-red-600 rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                          title="Delete profile picture"
+                        >
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+                    </>
+                  )}
+                  {uploading && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 pt-20">
                   <div className="flex items-start justify-between">
@@ -267,7 +444,9 @@ function ArtistProfileDashboard() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-purple-900">4.8</p>
+                  <p className="text-2xl font-bold text-purple-900">
+                    {artistData?.rating ? Number(artistData.rating).toFixed(1) : '0.0'}
+                  </p>
                   <p className="text-sm text-purple-700">Avg Rating</p>
                 </div>
               </div>
@@ -286,6 +465,16 @@ function ArtistProfileDashboard() {
                 }`}
               >
                 My Workshops ({myWorkshops.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('gallery')}
+                className={`pb-3 px-4 font-semibold transition-all duration-200 ${
+                  activeTab === 'gallery'
+                    ? 'border-b-2 border-purple-600 text-purple-900'
+                    : 'text-purple-600 hover:text-purple-900'
+                }`}
+              >
+                Gallery ({artistData?.gallery?.length || 0})
               </button>
               <button
                 onClick={() => setActiveTab('bookings')}
@@ -348,8 +537,20 @@ function ArtistProfileDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {myWorkshops.map((workshop) => (
                       <div key={workshop._id} className="border border-purple-100 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                        <div className="h-40 bg-linear-to-br from-purple-200 to-pink-200 flex items-center justify-center">
-                          <span className="text-5xl">🎨</span>
+                        <div className="h-40 bg-linear-to-br from-purple-200 to-pink-200 flex items-center justify-center overflow-hidden">
+                          {workshop.thumbnailUrl || workshop.imageUrl ? (
+                            <img 
+                              src={workshop.thumbnailUrl || workshop.imageUrl} 
+                              alt={workshop.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none'
+                                e.target.parentElement.innerHTML = '<span class="text-5xl">🎨</span>'
+                              }}
+                            />
+                          ) : (
+                            <span className="text-5xl">🎨</span>
+                          )}
                         </div>
                         <div className="p-4">
                           <h3 className="font-semibold text-purple-900 mb-2">{workshop.title}</h3>
@@ -377,6 +578,85 @@ function ArtistProfileDashboard() {
                       </div>
                     ))}
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Gallery Tab */}
+            {activeTab === 'gallery' && (
+              <div className="animate-fade-in">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-purple-900">Your Gallery</h2>
+                  <label className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 transform hover:scale-105 cursor-pointer flex items-center gap-2">
+                    <input 
+                      type="file" 
+                      accept="image/*,video/*" 
+                      multiple
+                      onChange={handleGalleryUpload}
+                      className="hidden"
+                      disabled={uploadingGallery}
+                    />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {uploadingGallery ? 'Uploading...' : 'Add Media'}
+                  </label>
+                </div>
+
+                {(() => {
+                  console.log('Gallery check - artistData:', artistData)
+                  console.log('Gallery array:', artistData?.gallery)
+                  console.log('Gallery length:', artistData?.gallery?.length)
+                  return null
+                })()}
+
+                {!artistData?.gallery || artistData.gallery.length === 0 ? (
+                  <div className="text-center py-12">
+                    <svg className="w-16 h-16 text-purple-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <h3 className="text-xl font-semibold text-purple-900 mb-2">No gallery media yet</h3>
+                    <p className="text-purple-700">Add images and videos to showcase your work</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-purple-700 mb-4">Gallery has {artistData.gallery.length} items</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {artistData.gallery.map((mediaItem, idx) => {
+                        const isVideo = typeof mediaItem === 'object' && mediaItem.type === 'video'
+                        const mediaUrl = typeof mediaItem === 'object' ? mediaItem.url : mediaItem
+                        
+                        return (
+                          <div key={idx} className="relative group rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-purple-200 bg-white">
+                            {isVideo ? (
+                              <video 
+                                src={mediaUrl} 
+                                className="w-full h-48 object-cover"
+                                controls
+                                preload="metadata"
+                              />
+                            ) : (
+                              <img 
+                                src={mediaUrl} 
+                                alt={`Gallery ${idx + 1}`}
+                                onClick={() => handleImageClick(mediaUrl)}
+                                className="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                              />
+                            )}
+                            <button
+                              onClick={() => handleRemoveGalleryImage(mediaUrl)}
+                              className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Remove media"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -504,6 +784,34 @@ function ArtistProfileDashboard() {
           </div>
         </div>
       </main>
+
+      {/* Image Lightbox Modal */}
+      {showImageModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={closeModal}
+        >
+          <button
+            onClick={closeModal}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-50"
+            aria-label="Close"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div 
+            className="relative max-w-6xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedImage}
+              alt="Gallery view"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </>
   )
 }

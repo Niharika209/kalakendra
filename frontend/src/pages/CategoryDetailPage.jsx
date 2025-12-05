@@ -123,6 +123,7 @@ function CategoryDetailPage() {
   const [workshops, setWorkshops] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -150,6 +151,23 @@ function CategoryDetailPage() {
     return () => { cancelled = true }
   }, [categoryId, category])
 
+  // Filter workshops and subcategories based on search term
+  const filteredWorkshops = workshops.filter(w => {
+    if (!searchTerm) return true
+    const search = searchTerm.toLowerCase()
+    return (
+      w.title?.toLowerCase().includes(search) ||
+      w.description?.toLowerCase().includes(search) ||
+      w.artist?.name?.toLowerCase().includes(search) ||
+      w.subcategory?.toLowerCase().includes(search)
+    )
+  })
+
+  const filteredSubcategories = category?.subcategories?.filter(sub => {
+    if (!searchTerm) return true
+    return sub.toLowerCase().includes(searchTerm.toLowerCase())
+  }) || []
+
   if (!category) {
     return (
       <>
@@ -168,7 +186,11 @@ function CategoryDetailPage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar 
+        searchTerm={searchTerm} 
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search workshops and subcategories..."
+      />
       <div className="min-h-screen pt-16 px-6 bg-linear-to-b from-amber-50 to-yellow-50">
         <div className="max-w-7xl mx-auto pb-20">
           {/* Header */}
@@ -180,29 +202,39 @@ function CategoryDetailPage() {
               {loading ? 'Loading…' : `Explore ${category.title}`}
             </p>
             {error && <p className="text-red-600 mt-2">{error}</p>}
+            {searchTerm && (
+              <p className="text-amber-700 mt-2">
+                Found {filteredSubcategories.length} subcategor{filteredSubcategories.length !== 1 ? 'ies' : 'y'} and {filteredWorkshops.length} workshop{filteredWorkshops.length !== 1 ? 's' : ''}
+              </p>
+            )}
           </div>
 
           {/* Subcategories Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {category.subcategories.map((subcategory, idx) => (
-              <Link
-                key={idx}
-                to={`/workshops/${categoryId}/${subcategory.toLowerCase().replace(/\s+/g, '-')}`}
-                className="p-4 bg-white/90 backdrop-blur-sm rounded-lg hover:shadow-lg transition-all border border-amber-100 hover:border-amber-300 hover:scale-105 transform duration-200"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[#45453e] font-semibold text-lg">{subcategory}</span>
-                  <span className="text-amber-600 text-xl">→</span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          {filteredSubcategories.length > 0 && (
+            <>
+              <h2 className="text-2xl font-bold text-amber-900 mb-4">Subcategories</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                {filteredSubcategories.map((subcategory, idx) => (
+                  <Link
+                    key={idx}
+                    to={`/workshops/${categoryId}/${subcategory.toLowerCase().replace(/\s+/g, '-')}`}
+                    className="p-4 bg-white/90 backdrop-blur-sm rounded-lg hover:shadow-lg transition-all border border-amber-100 hover:border-amber-300 hover:scale-105 transform duration-200"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#45453e] font-semibold text-lg">{subcategory}</span>
+                      <span className="text-amber-600 text-xl">→</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Workshops List - Sorted by Date Descending */}
           <div className="mt-12">
             {loading && <div className="py-8 text-center">Loading workshops…</div>}
 
-            {!loading && workshops.length === 0 && (
+            {!loading && filteredWorkshops.length === 0 && !searchTerm && (
               <div className="py-12 text-center">
                 <div className="text-6xl mb-4">🎨</div>
                 <h3 className="text-2xl font-bold text-amber-900 mb-2">No Workshops Available Yet</h3>
@@ -210,15 +242,32 @@ function CategoryDetailPage() {
               </div>
             )}
 
-            {!loading && workshops.length > 0 && (
+            {!loading && filteredWorkshops.length === 0 && searchTerm && (
+              <div className="py-12 text-center">
+                <h3 className="text-2xl font-bold text-amber-900 mb-2">No workshops found</h3>
+                <p className="text-amber-700">No workshops match "{searchTerm}"</p>
+              </div>
+            )}
+
+            {!loading && filteredWorkshops.length > 0 && (
               <>
                 <h2 className="text-3xl font-bold text-amber-900 mb-6 flex items-center">
                   <span className="text-amber-600 mr-3">🎯</span>
                   All {category.title} Workshops
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {workshops.sort((a, b) => new Date(b.date) - new Date(a.date)).map((w) => (
+                  {filteredWorkshops.sort((a, b) => new Date(b.date) - new Date(a.date)).map((w) => (
                     <div key={w._id} className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-2xl transition-all border border-amber-100 hover:border-amber-300 overflow-hidden transform hover:scale-105 duration-200">
+                      {(w.thumbnailUrl || w.imageUrl) && (
+                        <div className="h-48 overflow-hidden">
+                          <img 
+                            src={w.thumbnailUrl || w.imageUrl} 
+                            alt={w.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => e.target.style.display = 'none'}
+                          />
+                        </div>
+                      )}
                       <div className="p-6">
                         <h3 className="text-xl font-bold text-[#45453e] mb-3">{w.title}</h3>
                         <p className="text-sm text-amber-700 mb-2 flex items-center">

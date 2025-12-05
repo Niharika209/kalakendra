@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import '../App.css'
+import { useState } from 'react'
 
 // All workshop categories
 const workshopCategories = [
@@ -24,9 +25,26 @@ const workshopCategories = [
 ]
 
 function WorkshopsListPage() {
+  const [searchTerm, setSearchTerm] = useState('')
+
+  // Filter categories based on search term
+  const filteredCategories = workshopCategories.filter(category => {
+    if (!searchTerm) return true
+    const search = searchTerm.toLowerCase()
+    return (
+      category.title.toLowerCase().includes(search) ||
+      category.description.toLowerCase().includes(search) ||
+      category.id.toLowerCase().includes(search)
+    )
+  })
+
   return (
     <>
-      <Navbar />
+      <Navbar 
+        searchTerm={searchTerm} 
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search workshop categories..."
+      />
       <div className="min-h-screen pt-16 px-6 bg-linear-to-b from-amber-50 to-yellow-50">
         <div className="max-w-7xl mx-auto pb-20">
           {/* Header */}
@@ -39,9 +57,17 @@ function WorkshopsListPage() {
             </p>
           </div>
 
+          {searchTerm && (
+            <p className="text-amber-700 mb-4 text-center">
+              Found {filteredCategories.length} categor{filteredCategories.length !== 1 ? 'ies' : 'y'}
+              {searchTerm && ` matching "${searchTerm}"`}
+            </p>
+          )}
+
           {/* Categories Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {workshopCategories.map((category) => (
+          {filteredCategories.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCategories.map((category) => (
               <Link
                 key={category.id}
                 to={`/workshops/${category.id}`}
@@ -58,6 +84,11 @@ function WorkshopsListPage() {
               </Link>
             ))}
           </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-amber-700 text-lg">No categories found matching "{searchTerm}"</p>
+            </div>
+          )}
         </div>
       </div>
     </>
