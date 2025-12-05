@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
+import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
+import EnrolledWorkshopCard from '../components/EnrolledWorkshopCard'
+import CompletedWorkshopCard from '../components/CompletedWorkshopCard'
 import placeholderImage from '../assets/wave-background.svg'
 import { uploadImage, updateLearnerProfileImage, deleteLearnerProfileImage } from '../services/uploadService'
 
 function ProfilePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, logout, updateUser } = useAuth()
-  const [activeTab, setActiveTab] = useState('enrolled')
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'enrolled')
   const [enrolledWorkshops, setEnrolledWorkshops] = useState([])
   const [completedWorkshops, setCompletedWorkshops] = useState([])
   const [isEditing, setIsEditing] = useState(false)
@@ -16,6 +20,11 @@ function ProfilePage() {
   const [editEmail, setEditEmail] = useState('')
   const [uploading, setUploading] = useState(false)
   const [profileImage, setProfileImage] = useState(null)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [selectedWorkshop, setSelectedWorkshop] = useState(null)
+  const [reviewData, setReviewData] = useState({ rating: 0, comment: '' })
+  const [hoveredRating, setHoveredRating] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -31,32 +40,35 @@ function ProfilePage() {
 
   useEffect(() => {
     // Load enrolled and completed workshops from localStorage
-    try {
-      const userWorkshops = localStorage.getItem(`workshops_${user?.email}`)
-      if (userWorkshops) {
-        const workshops = JSON.parse(userWorkshops)
-        setEnrolledWorkshops(workshops.filter(w => !w.completed))
-        setCompletedWorkshops(workshops.filter(w => w.completed))
-      } else {
-        // If no workshops stored yet, check cart as enrolled workshops
-        const cart = localStorage.getItem('cart')
-        if (cart) {
-          const items = JSON.parse(cart).map(item => ({
-            ...item,
-            completed: false,
-            enrolledDate: new Date().toISOString()
-          }))
-          setEnrolledWorkshops(items)
-          // Save to user-specific storage
-          if (user?.email) {
-            localStorage.setItem(`workshops_${user.email}`, JSON.stringify(items))
-          }
+    const loadWorkshops = () => {
+      try {
+        const userWorkshops = localStorage.getItem(`workshops_${user?.email}`)
+        if (userWorkshops) {
+          const workshops = JSON.parse(userWorkshops)
+          setEnrolledWorkshops(workshops.filter(w => !w.completed))
+          setCompletedWorkshops(workshops.filter(w => w.completed))
+        } else {
+          setEnrolledWorkshops([])
+          setCompletedWorkshops([])
         }
+      } catch (e) {
+        console.error('Error loading workshops:', e)
       }
-    } catch (e) {
-      // ignore
+    }
+
+    if (user?.email) {
+      loadWorkshops()
     }
   }, [user])
+
+  // Listen for tab changes from navigation state
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab)
+      // Clear the state after using it
+      window.history.replaceState({}, document.title)
+    }
+  }, [location])
 
   const handleMarkComplete = (workshopId) => {
     try {
@@ -160,6 +172,57 @@ function ProfilePage() {
     navigate('/')
   }
 
+  const handleOpenReviewModal = (workshop) => {
+    setSelectedWorkshop(workshop)
+    setReviewData({ rating: 0, comment: '' })
+    setShowReviewModal(true)
+  }
+
+  const handleCloseReviewModal = () => {
+    setShowReviewModal(false)
+    setSelectedWorkshop(null)
+    setReviewData({ rating: 0, comment: '' })
+    setHoveredRating(0)
+  }
+
+  const handleSubmitReview = async () => {
+    if (!reviewData.rating || !reviewData.comment.trim()) {
+      alert('Please provide both a rating and a comment')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      // API call to submit review
+      const response = await axios.post('/api/reviews', {
+        workshopId: selectedWorkshop.id,
+        rating: reviewData.rating,
+        comment: reviewData.comment,
+        learnerName: user.name,
+        learnerId: user._id || user.id
+      })
+
+      console.log('Review submitted:', response.data)
+
+      // Update workshop to mark as reviewed
+      const userWorkshops = JSON.parse(localStorage.getItem(`workshops_${user.email}`) || '[]')
+      const updatedWorkshops = userWorkshops.map(w => 
+        w.id === selectedWorkshop.id ? { ...w, reviewed: true } : w
+      )
+      localStorage.setItem(`workshops_${user.email}`, JSON.stringify(updatedWorkshops))
+      setCompletedWorkshops(updatedWorkshops.filter(w => w.completed))
+
+      handleCloseReviewModal()
+      alert('Thank you for your review!')
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      const errorMsg = error.response?.data?.error || 'Failed to submit review. Please try again.'
+      alert(errorMsg)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   if (!user) {
     return (
       <>
@@ -176,6 +239,105 @@ function ProfilePage() {
   return (
     <>
       <Navbar />
+      
+      {/* Review Modal */}
+      {showReviewModal && selectedWorkshop && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transform transition-all duration-300 animate-scale-in">
+            <div className="sticky top-0 bg-linear-to-r from-amber-500 to-orange-500 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <h2 className="text-2xl font-bold text-white">Write a Review</h2>
+              <button 
+                onClick={handleCloseReviewModal}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <h3 className="text-xl font-semibold text-gray-900 mb-1">{selectedWorkshop.title}</h3>
+                <p className="text-gray-600">By {selectedWorkshop.artist}</p>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  How would you rate this workshop?
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewData({ ...reviewData, rating: star })}
+                      onMouseEnter={() => setHoveredRating(star)}
+                      onMouseLeave={() => setHoveredRating(0)}
+                      className="transition-all duration-200 transform hover:scale-110 focus:outline-none"
+                    >
+                      <svg 
+                        className={`w-10 h-10 transition-all duration-200 ${
+                          star <= (hoveredRating || reviewData.rating)
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'fill-none text-gray-300'
+                        }`}
+                        stroke="currentColor"
+                        strokeWidth={1.5}
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    </button>
+                  ))}
+                  {reviewData.rating > 0 && (
+                    <span className="ml-3 text-lg font-semibold text-gray-700 animate-fade-in">
+                      {reviewData.rating === 5 ? 'Excellent!' : 
+                       reviewData.rating === 4 ? 'Great!' : 
+                       reviewData.rating === 3 ? 'Good' : 
+                       reviewData.rating === 2 ? 'Fair' : 'Poor'}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Share your experience
+                </label>
+                <textarea
+                  value={reviewData.comment}
+                  onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
+                  placeholder="Tell us what you liked about this workshop, what you learned, and how it helped you..."
+                  rows={6}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200 resize-none"
+                />
+                <p className="mt-2 text-sm text-gray-500">
+                  {reviewData.comment.length} / 500 characters
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCloseReviewModal}
+                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all duration-200"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitReview}
+                  disabled={!reviewData.rating || !reviewData.comment.trim() || isSubmitting}
+                  className="flex-1 px-6 py-3 bg-linear-to-r from-amber-500 to-orange-500 text-white rounded-lg font-medium hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="min-h-screen bg-linear-to-br from-amber-50 via-yellow-50 to-orange-50">
         <div className="max-w-6xl mx-auto px-4 py-12">
           {/* Profile Header */}
@@ -242,15 +404,18 @@ function ProfilePage() {
                     <div className="flex gap-3">
                       <button
                         onClick={() => setIsEditing(!isEditing)}
-                        className="px-4 py-2 border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition-all duration-200"
+                        className="group px-6 py-2.5 bg-white border-2 border-amber-200 text-amber-900 rounded-xl font-medium hover:bg-amber-50 hover:border-amber-300 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
                       >
+                        <svg className="w-5 h-5 text-amber-600 group-hover:text-amber-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
                         {isEditing ? 'Cancel' : 'Edit Profile'}
                       </button>
                       <button
                         onClick={handleLogout}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                        className="group px-6 py-2.5 bg-linear-to-r from-red-500 to-rose-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-rose-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 flex items-center gap-2"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                         Logout
@@ -399,36 +564,9 @@ function ProfilePage() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-4">
                     {enrolledWorkshops.map((workshop, idx) => (
-                      <div key={idx} className="border border-amber-100 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                        <div className="h-40 bg-linear-to-br from-amber-200 to-orange-200 flex items-center justify-center overflow-hidden">
-                          {workshop.image ? (
-                            <img src={workshop.image} alt={workshop.title} onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage }} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-5xl">🎨</span>
-                          )}
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-amber-900 mb-1">{workshop.title}</h3>
-                          <p className="text-sm text-amber-700 mb-2">By {workshop.artist || 'Unknown'}</p>
-                          <p className="text-xs text-amber-600 mb-3">
-                            📅 Enrolled • {workshop.quantity || 1} ticket(s)
-                          </p>
-                          <div className="flex gap-2">
-                            <Link to={`/workshop/${workshop.id}`} className="flex-1 text-center px-3 py-2 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700 transition-all duration-200">
-                              View Details
-                            </Link>
-                            <button 
-                              onClick={() => handleMarkComplete(workshop.id)}
-                              className="px-3 py-2 border border-green-600 text-green-600 rounded-lg text-sm hover:bg-green-50 transition-all duration-200"
-                              title="Mark as completed"
-                            >
-                              ✓
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                      <EnrolledWorkshopCard key={idx} workshop={workshop} />
                     ))}
                   </div>
                 )}
@@ -439,38 +577,31 @@ function ProfilePage() {
             {activeTab === 'completed' && (
               <div className="animate-fade-in">
                 {completedWorkshops.length === 0 ? (
-                  <div className="text-center py-12">
-                    <svg className="w-16 h-16 text-amber-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 className="text-xl font-semibold text-amber-900 mb-2">No completed workshops yet</h3>
-                    <p className="text-amber-700">Complete your enrolled workshops to see them here</p>
+                  <div className="text-center py-16 px-4">
+                    <div className="max-w-md mx-auto">
+                      <div className="w-24 h-24 mx-auto mb-6 bg-linear-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center animate-bounce">
+                        <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-2xl font-bold text-amber-900 mb-3">No Completed Workshops Yet</h3>
+                      <p className="text-amber-700 mb-6 leading-relaxed">Complete your enrolled workshops to unlock achievements and see them here!</p>
+                      <Link to="/profile" onClick={() => setActiveTab('enrolled')} className="inline-flex items-center gap-2 px-8 py-3 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        View Enrolled Workshops
+                      </Link>
+                    </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-4">
                     {completedWorkshops.map((workshop, idx) => (
-                      <div key={idx} className="border border-green-200 bg-green-50 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                        <div className="h-40 bg-linear-to-br from-green-200 to-emerald-200 flex items-center justify-center overflow-hidden relative">
-                          {workshop.image ? (
-                            <img src={workshop.image} alt={workshop.title} onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage }} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-5xl">🎨</span>
-                          )}
-                          <div className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                            ✓ Completed
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-amber-900 mb-1">{workshop.title}</h3>
-                          <p className="text-sm text-amber-700 mb-2">By {workshop.artist || 'Unknown'}</p>
-                          <p className="text-xs text-green-700 mb-3">
-                            🎉 Completed {workshop.completedDate ? new Date(workshop.completedDate).toLocaleDateString() : 'recently'}
-                          </p>
-                          <Link to={`/workshop/${workshop.id}`} className="block text-center px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-all duration-200">
-                            View Details
-                          </Link>
-                        </div>
-                      </div>
+                      <CompletedWorkshopCard 
+                        key={idx} 
+                        workshop={workshop}
+                        onReviewClick={handleOpenReviewModal}
+                      />
                     ))}
                   </div>
                 )}

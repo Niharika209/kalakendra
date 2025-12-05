@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
+import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
+
+const API_URL = 'http://localhost:5000/api'
 
 // Cart is persisted in localStorage under key 'cart'. Start with stored cart or empty array.
 
 function CheckoutPage() {
   const navigate = useNavigate()
+  const { user, accessToken } = useAuth()
   const [cartItems, setCartItems] = useState(() => {
     try {
       const raw = localStorage.getItem('cart')
@@ -15,16 +20,9 @@ function CheckoutPage() {
     }
   })
   const [step, setStep] = useState("cart")
-  const [paymentMethod, setPaymentMethod] = useState("card")
   const [loading, setLoading] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [itemToRemove, setItemToRemove] = useState(null)
-  const [formData, setFormData] = useState({
-    cardName: "",
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-  })
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const tax = Math.round(subtotal * 0.18)
@@ -58,20 +56,126 @@ function CheckoutPage() {
     setItemToRemove(null)
   }
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+  const handlePayment = async () => {
+    
+    if (!user) {
+      alert('Please login to continue with payment')
+      navigate('/login')
+      return
+    }
 
-  const handlePayment = async (e) => {
-    e.preventDefault()
     setLoading(true)
 
-    // Simulate payment processing
-    setTimeout(() => {
-      setStep("confirmation")
+    try {
+      // Create Razorpay order via backend
+      const response = await axios.post('/api/payment/create-order', {
+        amount: total,
+        currency: 'INR',
+      })
+
+      console.log('ORDER DATA:', response.data);
+      
+      const { id: order_id, amount, currency } = response.data
+
+      console.log('Razorpay Key:', import.meta.env.VITE_RAZORPAY_KEY_ID);
+      console.log('Order ID:', order_id);
+      console.log('Amount:', amount, 'Currency:', currency);
+
+      // Set up Razorpay options - Minimal config for maximum compatibility
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: amount,
+        currency: currency,
+        name: "KalaKendra",
+        description: `Workshop Enrollment - ${cartItems.length} workshop(s)`,
+        order_id: order_id,
+        handler: async (response) => {
+          console.log('Payment successful:', response);
+
+          try {
+            // Create booking records in database for each workshop
+            const bookingPromises = cartItems.map(async (item) => {
+              try {
+                const bookingData = {
+                  workshop: item._id || item.id,
+                  learner: user._id || user.id,
+                  quantity: item.quantity,
+                  paymentStatus: 'paid',
+                  totalAmount: item.price * item.quantity,
+                  paymentId: response.razorpay_payment_id,
+                  orderId: response.razorpay_order_id
+                };
+                
+                console.log('Creating booking for workshop:', item.title, 'Quantity:', item.quantity);
+                const bookingResponse = await axios.post(
+                  `${API_URL}/bookings`, 
+                  bookingData,
+                  { headers: { Authorization: `Bearer ${accessToken}` } }
+                );
+                console.log('Booking created:', bookingResponse.data);
+                return bookingResponse.data;
+              } catch (error) {
+                console.error('Error creating booking for workshop:', item.title, error);
+                throw error;
+              }
+            });
+
+            await Promise.all(bookingPromises);
+            console.log('✅ All bookings created successfully');
+
+            // Also save to localStorage as backup
+            const existingWorkshops = JSON.parse(localStorage.getItem(`workshops_${user.email}`) || '[]');
+            const newEnrolledWorkshops = cartItems.map(item => ({
+              ...item,
+              completed: false,
+              enrolledDate: new Date().toISOString(),
+              paymentId: response.razorpay_payment_id,
+              orderId: response.razorpay_order_id
+            }));
+            const allWorkshops = [...existingWorkshops, ...newEnrolledWorkshops];
+            localStorage.setItem(`workshops_${user.email}`, JSON.stringify(allWorkshops));
+
+            localStorage.removeItem('cart');
+            setCartItems([]);
+          } catch (e) {
+            console.error('Error processing enrollment:', e);
+            alert('Payment successful but there was an error saving your enrollment. Please contact support.');
+          }
+
+          setStep("confirmation");
+          setLoading(false);
+        },
+        prefill: {
+          name: user.name || 'Test User',
+          email: user.email || 'test@example.com',
+          contact: '9999999999'
+        },
+        theme: {
+          color: "#d97706"
+        },
+        modal: {
+          escape: true,
+          ondismiss: () => {
+            setLoading(false);
+            console.log('Checkout closed');
+          }
+        }
+      }
+
+      console.log('Razorpay options:', options);
+
+      const paymentObject = new window.Razorpay(options)
+      paymentObject.on('payment.failed', function (response) {
+        console.error('Payment failed:', response.error)
+        alert(`Payment failed: ${response.error.description || 'Please try again'}`)
+        setLoading(false)
+      })
+      paymentObject.open()
+    } catch (error) {
+      console.error('Payment initiation failed:', error)
+      alert('Failed to initiate payment. Please try again.')
       setLoading(false)
-    }, 2000)
+    }
   }
 
   // Persist cart to localStorage whenever it changes
@@ -95,10 +199,10 @@ function CheckoutPage() {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-amber-900 mb-2">Payment Successful!</h2>
-            <p className="text-amber-800 mb-6">You have been enrolled in {cartItems.length} workshop(s).</p>
+            <p className="text-amber-800 mb-6">You are enrolled in the workshop.</p>
             <p className="text-sm text-amber-700 mb-6">Check your email for workshop details and access links.</p>
             <button
-              onClick={() => navigate('/learner/enrolled')}
+              onClick={() => navigate('/profile', { state: { tab: 'enrolled' } })}
               className="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-md font-medium transition-colors"
             >
               View My Workshops
@@ -225,184 +329,12 @@ function CheckoutPage() {
                   </div>
 
                   <button
-                    onClick={() => setStep("payment")}
-                    disabled={cartItems.length === 0}
+                    onClick={handlePayment}
+                    disabled={cartItems.length === 0 || loading}
                     className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-md font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Proceed to Payment
+                    {loading ? 'Processing...' : 'Proceed to Payment'}
                   </button>
-                </div>
-              )}
-
-              {step === "payment" && (
-                <div className="p-8 border border-amber-100 bg-white rounded-lg shadow-md">
-                  <h2 className="text-2xl font-bold text-amber-900 mb-6">Payment Method</h2>
-
-                  {/* Payment Method Selection */}
-                  <div className="space-y-3 mb-8">
-                    {[
-                      { id: "card", label: "Credit/Debit Card" },
-                      { id: "upi", label: "UPI" },
-                      { id: "wallet", label: "Digital Wallet" },
-                    ].map((method) => (
-                      <label
-                        key={method.id}
-                        className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-300 ${
-                          paymentMethod === method.id ? 'border-amber-600 bg-amber-50' : 'border-amber-200'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value={method.id}
-                          checked={paymentMethod === method.id}
-                          onChange={(e) => setPaymentMethod(e.target.value)}
-                          className="w-4 h-4 text-amber-600"
-                        />
-                        <span className="ml-3 font-medium text-amber-900">{method.label}</span>
-                      </label>
-                    ))}
-                  </div>
-
-                  {/* Card Payment Form */}
-                  {paymentMethod === "card" && (
-                    <form onSubmit={handlePayment} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-amber-900 mb-2">Cardholder Name</label>
-                        <input
-                          type="text"
-                          name="cardName"
-                          value={formData.cardName}
-                          onChange={handleInputChange}
-                          placeholder="John Doe"
-                          className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-amber-900 transition-all duration-200"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-amber-900 mb-2">Card Number</label>
-                        <input
-                          type="text"
-                          name="cardNumber"
-                          value={formData.cardNumber}
-                          onChange={handleInputChange}
-                          placeholder="1234 5678 9012 3456"
-                          maxLength={19}
-                          className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-amber-900 transition-all duration-200"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-amber-900 mb-2">Expiry Date</label>
-                          <input
-                            type="text"
-                            name="expiryDate"
-                            value={formData.expiryDate}
-                            onChange={handleInputChange}
-                            placeholder="MM/YY"
-                            maxLength={5}
-                            className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-amber-900 transition-all duration-200"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-amber-900 mb-2">CVV</label>
-                          <input
-                            type="text"
-                            name="cvv"
-                            value={formData.cvv}
-                            onChange={handleInputChange}
-                            placeholder="123"
-                            maxLength={3}
-                            className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-amber-900 transition-all duration-200"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4 pt-6 border-t border-amber-200">
-                        <button
-                          type="button"
-                          onClick={() => setStep("cart")}
-                          className="flex-1 border border-amber-300 text-amber-900 hover:bg-amber-50 px-4 py-2 rounded-md transition-colors"
-                        >
-                          Back
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={loading}
-                          className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md transition-all duration-300 disabled:opacity-50"
-                        >
-                          {loading ? "Processing..." : "Pay Now"}
-                        </button>
-                      </div>
-                    </form>
-                  )}
-
-                  {/* UPI Payment */}
-                  {paymentMethod === "upi" && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-amber-900 mb-2">UPI ID</label>
-                        <input
-                          type="text"
-                          placeholder="yourname@upi"
-                          className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-amber-900 transition-all duration-200"
-                        />
-                      </div>
-                      <div className="flex gap-4 pt-6 border-t border-amber-200">
-                        <button
-                          onClick={() => setStep("cart")}
-                          className="flex-1 border border-amber-300 text-amber-900 hover:bg-amber-50 px-4 py-2 rounded-md transition-colors"
-                        >
-                          Back
-                        </button>
-                        <button
-                          onClick={handlePayment}
-                          disabled={loading}
-                          className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md transition-all duration-300 disabled:opacity-50"
-                        >
-                          {loading ? "Processing..." : "Pay with UPI"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Wallet Payment */}
-                  {paymentMethod === "wallet" && (
-                    <div className="space-y-4">
-                      <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-lg flex gap-3">
-                        <svg className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p className="text-sm text-amber-800">Select your preferred digital wallet provider</p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {["Google Pay", "PhonePe", "Paytm", "Amazon Pay"].map((wallet) => (
-                          <button
-                            key={wallet}
-                            className="border border-amber-300 text-amber-900 hover:bg-amber-50 px-4 py-2 rounded-md transition-all duration-200"
-                          >
-                            {wallet}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="flex gap-4 pt-6 border-t border-amber-200">
-                        <button
-                          onClick={() => setStep("cart")}
-                          className="flex-1 border border-amber-300 text-amber-900 hover:bg-amber-50 px-4 py-2 rounded-md transition-colors"
-                        >
-                          Back
-                        </button>
-                        <button
-                          onClick={handlePayment}
-                          disabled={loading}
-                          className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md transition-all duration-300 disabled:opacity-50"
-                        >
-                          {loading ? "Processing..." : "Continue"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

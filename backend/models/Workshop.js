@@ -9,6 +9,7 @@ const workshopSchema = new mongoose.Schema({
   time: { type: String },            // e.g. "10:00 AM - 12:00 PM"
   duration: { type: String },        // e.g. "2 hours"
   enrolled: { type: Number, default: 0 },
+  revenue: { type: Number, default: 0 }, // Total revenue generated from this workshop
   mode: { type: String, enum: ["Online", "Offline", "online", "offline"], default: "Online" },
   location: { type: String },
   
@@ -25,7 +26,15 @@ const workshopSchema = new mongoose.Schema({
   
   // Media
   imageUrl: { type: String },
-  thumbnailUrl: { type: String }
+  thumbnailUrl: { type: String },
+  
+  // Reviews
+  reviews: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Review"
+  }],
+  averageRating: { type: Number, default: 0 },
+  reviewCount: { type: Number, default: 0 }
 }, { timestamps: true });
 
 export default mongoose.model("Workshop", workshopSchema);

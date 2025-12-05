@@ -11,6 +11,9 @@ import learnerRoutes from "./routes/learnerRoutes.js";
 import workshopRoutes from "./routes/workshopRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import demoBookingRoutes from "./routes/demoBookingRoutes.js";
 
 // Import middleware
 import { errorHandler } from "./middleware/errorMiddleware.js";
@@ -51,6 +54,9 @@ app.use("/api/learners", learnerRoutes);
 app.use("/api/workshops", workshopRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/api/demo-bookings", demoBookingRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

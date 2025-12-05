@@ -34,6 +34,9 @@ router.get("/:id", getArtistById);
 // UPDATE - Update artist
 router.put("/:id", updateArtist);
 
+// PATCH - Partial update artist (for demo settings, etc.)
+router.patch("/:id", updateArtist);
+
 // UPDATE - Update artist profile image
 router.put("/:id/profile-image", updateArtistProfileImage);
 

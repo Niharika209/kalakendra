@@ -7,12 +7,12 @@ import {
   updateBooking, 
   deleteBooking 
 } from "../controllers/bookingController.js";
-import { learnerAuth } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// CREATE - Create booking (requires learner auth)
-router.post("/", learnerAuth, createBooking);
+// CREATE - Create booking (requires authentication)
+router.post("/", protect, createBooking);
 
 // READ - Get all bookings
 router.get("/", getAllBookings);
