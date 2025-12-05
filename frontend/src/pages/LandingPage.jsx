@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import axios from 'axios'
 import Navbar from '../components/Navbar'
 import ArtistCard from '../components/ArtistCard'
+import { API_BASE_URL } from '../config/api.js'
 import danceImage from '../assets/dance-art.jpg'
 import sitarImage from '../assets/sitar.png'
 import paintingImage from '../assets/painting.png'
@@ -122,7 +123,7 @@ function LandingPage() {
     async function loadFeatured() {
       try {
   // try backend first
-        const resp = await axios.get('/api/artists/featured')
+        const resp = await axios.get(`${API_BASE_URL}/artists/featured`)
         if (!cancelled) {
           const data = resp?.data
           // backend may return either an array or an object wrapper { artists: [...] }
