@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar'
 import '../App.css'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+import { API_BASE_URL } from '../config/api.js'
 
 // All workshop data with subcategories
 const workshopData = {
@@ -131,7 +132,7 @@ function CategoryDetailPage() {
       setLoading(true)
       try {
         // Fetch all workshops by setting a high limit (or you can add pagination later)
-        const resp = await axios.get(`/api/workshops/category/${categoryId}?limit=1000`)
+        const resp = await axios.get(`${API_BASE_URL}/workshops/category/${categoryId}?limit=1000`)
         if (!cancelled) setWorkshops(Array.isArray(resp.data) ? resp.data : [])
       } catch (err) {
         // If backend returns 404 (no workshops/resource), treat as empty list instead of showing raw error
