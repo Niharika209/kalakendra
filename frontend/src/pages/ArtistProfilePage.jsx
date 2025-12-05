@@ -58,7 +58,7 @@ function ArtistProfilePage() {
         const status = err?.response?.status
         if (!cancelled && status === 404 && /^[0-9]+$/.test(id)) {
           try {
-            const listResp = await axios.get('/api/artists')
+            const listResp = await axios.get(`${API_URL}/artists`)
             const idx = Math.max(0, Number(id) - 1)
             const target = Array.isArray(listResp.data) ? listResp.data[idx] : null
             if (target) {

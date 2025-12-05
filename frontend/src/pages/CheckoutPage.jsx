@@ -69,7 +69,7 @@ function CheckoutPage() {
 
     try {
       // Create Razorpay order via backend
-      const response = await axios.post('/api/payment/create-order', {
+      const response = await axios.post(`${API_URL}/payment/create-order`, {
         amount: total,
         currency: 'INR',
       })

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import Navbar from '../components/Navbar'
 import ArtistCard from '../components/ArtistCard'
+import { API_BASE_URL } from '../config/api.js'
 
 function ArtistsListPage() {
   const [artists, setArtists] = useState([])
@@ -14,7 +15,7 @@ function ArtistsListPage() {
     let cancelled = false
     async function load() {
       try {
-        const resp = await axios.get('/api/artists')
+        const resp = await axios.get(`${API_BASE_URL}/artists`)
         if (!cancelled) setArtists(Array.isArray(resp.data) ? resp.data : [])
       } catch (err) {
         if (!cancelled) setError(err?.response?.data?.error || err.message || 'Could not load artists')
