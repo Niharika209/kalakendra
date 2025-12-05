@@ -86,6 +86,20 @@ const artistSchema = new mongoose.Schema({
     text: String,
     date: Date
   }],
+  // Demo session settings
+  demoSessionSettings: {
+    enabled: { type: Boolean, default: false },
+    offersLive: { type: Boolean, default: false },
+    offersRecorded: { type: Boolean, default: false },
+    recordedSessionUrl: { type: String, default: null }, // URL to pre-recorded demo
+    demoDescription: { type: String, default: '' },
+    liveSessionSlots: [{
+      date: { type: String, required: true },
+      time: { type: String, required: true },
+      available: { type: Boolean, default: true },
+      bookedBy: { type: String, default: null } // Learner email
+    }]
+  },
   refreshTokens: { type: [String], default: [] }
 }, { timestamps: true });
 

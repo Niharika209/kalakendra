@@ -18,13 +18,13 @@ function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [profileImage, setProfileImage] = useState(null)
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [selectedWorkshop, setSelectedWorkshop] = useState(null)
   const [reviewData, setReviewData] = useState({ rating: 0, comment: '' })
   const [hoveredRating, setHoveredRating] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [profileImage, setProfileImage] = useState(null)
 
   useEffect(() => {
     if (user) {

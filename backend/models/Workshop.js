@@ -17,6 +17,7 @@ const workshopSchema = new mongoose.Schema({
   
   enrolled: { type: Number, default: 0 },
   maxParticipants: { type: Number },
+  revenue: { type: Number, default: 0 }, // Total revenue generated from this workshop
   
   // Mode and Location (enhanced)
   mode: { type: String, enum: ["online", "offline", "hybrid"], default: "online", lowercase: true },

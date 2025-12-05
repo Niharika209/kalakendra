@@ -14,6 +14,7 @@ import reviewRoutes from "./routes/reviewRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
+import demoBookingRoutes from "./routes/demoBookingRoutes.js";
 
 // Import middleware
 import { errorHandler } from "./middleware/errorMiddleware.js";
@@ -57,6 +58,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/demo-bookings", demoBookingRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

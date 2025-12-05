@@ -88,14 +88,28 @@ export const getArtistById = async (req, res) => {
 // UPDATE - Update artist profile
 export const updateArtist = async (req, res) => {
   try {
+    console.log('=== UPDATE ARTIST REQUEST ===')
+    console.log('Artist ID:', req.params.id)
+    console.log('Update data:', JSON.stringify(req.body, null, 2))
+    
     const artist = await Artist.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
     );
-    if (!artist) return res.status(404).json({ error: "Artist not found" });
+    
+    if (!artist) {
+      console.log('Artist not found with ID:', req.params.id)
+      return res.status(404).json({ error: "Artist not found" });
+    }
+    
+    console.log('Artist updated successfully:', artist._id)
+    console.log('Saved demoSessionSettings:', JSON.stringify(artist.demoSessionSettings, null, 2))
+    console.log('Saved slots count:', artist.demoSessionSettings?.liveSessionSlots?.length || 0)
+    console.log('============================')
     res.json(artist);
   } catch (err) {
+    console.error('Error updating artist:', err)
     res.status(400).json({ error: err.message });
   }
 };

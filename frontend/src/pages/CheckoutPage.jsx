@@ -4,11 +4,13 @@ import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 
+const API_URL = 'http://localhost:5000/api'
+
 // Cart is persisted in localStorage under key 'cart'. Start with stored cart or empty array.
 
 function CheckoutPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, accessToken } = useAuth()
   const [cartItems, setCartItems] = useState(() => {
     try {
       const raw = localStorage.getItem('cart')
@@ -91,6 +93,37 @@ function CheckoutPage() {
           console.log('Payment successful:', response);
 
           try {
+            // Create booking records in database for each workshop
+            const bookingPromises = cartItems.map(async (item) => {
+              try {
+                const bookingData = {
+                  workshop: item._id || item.id,
+                  learner: user._id || user.id,
+                  quantity: item.quantity,
+                  paymentStatus: 'paid',
+                  totalAmount: item.price * item.quantity,
+                  paymentId: response.razorpay_payment_id,
+                  orderId: response.razorpay_order_id
+                };
+                
+                console.log('Creating booking for workshop:', item.title, 'Quantity:', item.quantity);
+                const bookingResponse = await axios.post(
+                  `${API_URL}/bookings`, 
+                  bookingData,
+                  { headers: { Authorization: `Bearer ${accessToken}` } }
+                );
+                console.log('Booking created:', bookingResponse.data);
+                return bookingResponse.data;
+              } catch (error) {
+                console.error('Error creating booking for workshop:', item.title, error);
+                throw error;
+              }
+            });
+
+            await Promise.all(bookingPromises);
+            console.log('✅ All bookings created successfully');
+
+            // Also save to localStorage as backup
             const existingWorkshops = JSON.parse(localStorage.getItem(`workshops_${user.email}`) || '[]');
             const newEnrolledWorkshops = cartItems.map(item => ({
               ...item,
@@ -105,7 +138,8 @@ function CheckoutPage() {
             localStorage.removeItem('cart');
             setCartItems([]);
           } catch (e) {
-            console.error('Error saving enrolled workshops:', e);
+            console.error('Error processing enrollment:', e);
+            alert('Payment successful but there was an error saving your enrollment. Please contact support.');
           }
 
           setStep("confirmation");
@@ -165,7 +199,7 @@ function CheckoutPage() {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-amber-900 mb-2">Payment Successful!</h2>
-            <p className="text-amber-800 mb-6">You have been enrolled in {cartItems.length} workshop(s).</p>
+            <p className="text-amber-800 mb-6">You are enrolled in the workshop.</p>
             <p className="text-sm text-amber-700 mb-6">Check your email for workshop details and access links.</p>
             <button
               onClick={() => navigate('/profile', { state: { tab: 'enrolled' } })}

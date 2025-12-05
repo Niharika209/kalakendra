@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import axios from 'axios'
+import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import priyaImage from '../assets/priya.png'
 import ashaImage from '../assets/asha.png'
@@ -8,9 +9,12 @@ import karanImage from '../assets/karan.png'
 import vikramImage from '../assets/vikram.png'
 import placeholderImage from '../assets/wave-background.svg'
 
+const API_URL = 'http://localhost:5000/api'
+
 function ArtistProfilePage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [activeTab, setActiveTab] = useState('workshops')
   const [artist, setArtist] = useState(null)
@@ -18,6 +22,17 @@ function ArtistProfilePage() {
   const [error, setError] = useState(null)
   const [showImageModal, setShowImageModal] = useState(false)
   const [selectedImage, setSelectedImage] = useState('')
+  const [showDemoModal, setShowDemoModal] = useState(false)
+  const [demoSessionType, setDemoSessionType] = useState('') // 'live' or 'recorded'
+  const [demoFormData, setDemoFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    artInterest: '',
+    message: ''
+  });
+  const [demoSubmitting, setDemoSubmitting] = useState(false)
+  const [selectedSlot, setSelectedSlot] = useState(null)
 
   const handleImageClick = (imageUrl) => {
     setSelectedImage(imageUrl)
@@ -77,11 +92,109 @@ function ArtistProfilePage() {
   }, [id])
 
   const handleBookSession = () => {
-    setActiveTab('workshops')
-    setTimeout(() => {
-      const tabsSection = document.getElementById('tabs-section')
-      if (tabsSection) tabsSection.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
+    if (!user) {
+      alert('Please login to book a demo session')
+      navigate('/login')
+      return
+    }
+    
+    // Check if artist has demo sessions enabled
+    const demoSettings = artist?.demoSessionSettings
+    if (!demoSettings?.enabled) {
+      alert('This artist is not currently offering demo sessions')
+      return
+    }
+    
+    // Validate that artist has actually set up demo content
+    const hasRecordedVideo = demoSettings.offersRecorded && demoSettings.recordedSessionUrl
+    const hasLiveSlots = demoSettings.offersLive && demoSettings.liveSessionSlots && demoSettings.liveSessionSlots.length > 0
+    
+    if (!hasRecordedVideo && !hasLiveSlots) {
+      alert('Demo sessions are not available at the moment. The artist needs to set up demo content.')
+      return
+    }
+    
+    // Set default session type based on what artist offers
+    if (demoSettings.offersLive && hasLiveSlots && !hasRecordedVideo) {
+      setDemoSessionType('live')
+    } else if (hasRecordedVideo && !hasLiveSlots) {
+      setDemoSessionType('recorded')
+    } else if (hasLiveSlots) {
+      setDemoSessionType('live') // Default to live if both are available
+    } else {
+      setDemoSessionType('recorded')
+    }
+    
+    setShowDemoModal(true)
+    // Pre-fill form with user data
+    setDemoFormData(prev => ({
+      ...prev,
+      name: user.name || '',
+      email: user.email || ''
+    }))
+  }
+
+  const handleDemoFormChange = (e) => {
+    const { name, value } = e.target
+    setDemoFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleDemoSubmit = async (e) => {
+    e.preventDefault()
+    
+    // For recorded sessions, no booking needed - just acknowledge access
+    if (demoSessionType === 'recorded') {
+      alert('You now have access to the demo video! You can watch it anytime.')
+      setShowDemoModal(false)
+      return
+    }
+
+    // For live sessions, validate form and slot selection
+    if (!demoFormData.name || !demoFormData.email || !demoFormData.phone) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    if (!selectedSlot) {
+      alert('Please select a time slot for the live session')
+      return
+    }
+
+    setDemoSubmitting(true)
+
+    try {
+      // Create demo booking via API
+      const bookingData = {
+        artistId: artist._id,
+        learnerName: demoFormData.name,
+        learnerEmail: demoFormData.email,
+        learnerPhone: demoFormData.phone,
+        artInterest: demoFormData.artInterest,
+        message: demoFormData.message,
+        sessionType: 'live',
+        selectedSlot: selectedSlot
+      }
+
+      const response = await axios.post(`${API_URL}/demo-bookings`, bookingData)
+      
+      // Show success confirmation
+      alert(`🎉 Demo session confirmed!\n\nYour live session with ${artist.name} has been booked for:\n📅 ${new Date(selectedSlot.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}\n🕐 ${selectedSlot.time}\n\nThe artist will contact you at ${demoFormData.email} with session details.`)
+      
+      setShowDemoModal(false)
+      setDemoFormData({
+        name: '',
+        email: '',
+        phone: '',
+        artInterest: '',
+        message: ''
+      })
+      setSelectedSlot(null)
+    } catch (error) {
+      console.error('Error booking demo session:', error)
+      alert('Failed to book demo session. Please try again.')
+    } finally {
+      setDemoSubmitting(false)
+    }
   }
 
   // Helper getters with graceful fallbacks
@@ -158,11 +271,14 @@ function ArtistProfilePage() {
                         className="w-full h-full object-center object-cover"
                       />
                     </div>
-                    <button
-                      onClick={handleBookSession}
-                      className="w-full bg-amber-600 hover:bg-amber-700 text-white mb-3 px-4 py-2 rounded-md font-medium transition-colors">
-                      Book a Session
-                    </button>
+                    {/* Only show demo button if artist has enabled demo sessions */}
+                    {artist.demoSessionSettings?.enabled && (
+                      <button
+                        onClick={handleBookSession}
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-white mb-3 px-4 py-2 rounded-md font-medium transition-colors">
+                        Book Free Demo Session
+                      </button>
+                    )}
                     <button
                       onClick={() => setIsWishlisted(!isWishlisted)}
                       className={`w-full px-4 py-2 rounded-md font-medium border transition-colors ${
@@ -459,6 +575,307 @@ function ArtistProfilePage() {
               alt="Gallery view"
               className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Demo Session Booking Modal */}
+      {showDemoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowDemoModal(false)}>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-amber-100 px-6 py-4 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-amber-900">Book Free Demo Session</h2>
+                <p className="text-sm text-amber-700">with {artist?.name}</p>
+              </div>
+              <button
+                onClick={() => setShowDemoModal(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleDemoSubmit} className="p-6">
+              {/* Session Type Selection - Only show if artist offers both with content */}
+              {(() => {
+                const hasRecordedVideo = artist?.demoSessionSettings?.offersRecorded && artist?.demoSessionSettings?.recordedSessionUrl
+                const hasLiveSlots = artist?.demoSessionSettings?.offersLive && artist?.demoSessionSettings?.liveSessionSlots && artist?.demoSessionSettings?.liveSessionSlots.length > 0
+                return hasRecordedVideo && hasLiveSlots
+              })() && (
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-amber-900 mb-3">Select Session Type *</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setDemoSessionType('live')}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        demoSessionType === 'live'
+                          ? 'border-amber-600 bg-amber-50'
+                          : 'border-gray-200 hover:border-amber-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center mb-2">
+                        <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <p className="font-semibold text-amber-900">Live Online Session</p>
+                      <p className="text-xs text-amber-700 mt-1">Schedule a real-time session</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDemoSessionType('recorded')}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        demoSessionType === 'recorded'
+                          ? 'border-amber-600 bg-amber-50'
+                          : 'border-gray-200 hover:border-amber-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center mb-2">
+                        <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="font-semibold text-amber-900">Recorded Session</p>
+                      <p className="text-xs text-amber-700 mt-1">Watch at your convenience</p>
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Show single session type info if only one is offered */}
+              {(() => {
+                const hasRecordedVideo = artist?.demoSessionSettings?.offersRecorded && artist?.demoSessionSettings?.recordedSessionUrl
+                const hasLiveSlots = artist?.demoSessionSettings?.offersLive && artist?.demoSessionSettings?.liveSessionSlots && artist?.demoSessionSettings?.liveSessionSlots.length > 0
+                return hasLiveSlots && !hasRecordedVideo
+              })() && (
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <div>
+                      <p className="font-semibold text-amber-900">Live Online Session</p>
+                      <p className="text-sm text-amber-700">This artist offers live demo sessions</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Show video player when recorded is selected (single or multiple options) */}
+              {demoSessionType === 'recorded' && artist?.demoSessionSettings?.offersRecorded && artist?.demoSessionSettings?.recordedSessionUrl && (
+                <div className="mb-6">
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+                    <div className="flex items-center gap-3">
+                      <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="font-semibold text-amber-900">Free Demo Session - Watch Now!</p>
+                        <p className="text-sm text-amber-700">This pre-recorded demo is available for free</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Video Player */}
+                  <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden shadow-lg mb-4">
+                    <iframe
+                      src={artist?.demoSessionSettings?.recordedSessionUrl?.replace('watch?v=', 'embed/')}
+                      className="w-full h-full"
+                      allowFullScreen
+                      title="Demo Session Video"
+                    />
+                  </div>
+
+                  {/* Close Button for Recorded Video */}
+                  <button
+                    type="button"
+                    onClick={() => setShowDemoModal(false)}
+                    className="w-full px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-semibold"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+
+              {/* Only show form for live sessions */}
+              {demoSessionType === 'live' && (
+                <>
+                  {/* Time Slot Selection for Live Sessions */}
+                  <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-amber-900 mb-3">📅 Choose Your Session Time</h3>
+                  <p className="text-sm text-amber-700 mb-4">Select an available time slot for your live demo session</p>
+                  
+                  {(() => {
+                    console.log('=== DEMO BOOKING DEBUG ===')
+                    console.log('Full Artist Data:', artist)
+                    console.log('Demo Settings:', artist?.demoSessionSettings)
+                    console.log('Live Session Slots:', artist?.demoSessionSettings?.liveSessionSlots)
+                    console.log('Slots Type:', typeof artist?.demoSessionSettings?.liveSessionSlots)
+                    console.log('Is Array:', Array.isArray(artist?.demoSessionSettings?.liveSessionSlots))
+                    console.log('=========================')
+                    return null
+                  })()}
+                  
+                  {artist?.demoSessionSettings?.liveSessionSlots && Array.isArray(artist.demoSessionSettings.liveSessionSlots) && artist.demoSessionSettings.liveSessionSlots.length > 0 ? (
+                    artist.demoSessionSettings.liveSessionSlots.filter(slot => slot.available && new Date(`${slot.date}T${slot.time}`) > new Date()).length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {artist.demoSessionSettings.liveSessionSlots
+                          .filter(slot => slot.available && new Date(`${slot.date}T${slot.time}`) > new Date())
+                          .map((slot, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => setSelectedSlot(slot)}
+                              className={`p-4 border-2 rounded-lg text-left transition-all transform hover:scale-105 ${
+                                selectedSlot?.date === slot.date && selectedSlot?.time === slot.time
+                                  ? 'border-amber-600 bg-amber-50 shadow-lg'
+                                  : 'border-amber-200 hover:border-amber-400 hover:shadow-md'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-full ${
+                                  selectedSlot?.date === slot.date && selectedSlot?.time === slot.time
+                                    ? 'bg-amber-600'
+                                    : 'bg-amber-100'
+                                }`}>
+                                  <svg className={`w-5 h-5 ${
+                                    selectedSlot?.date === slot.date && selectedSlot?.time === slot.time
+                                      ? 'text-white'
+                                      : 'text-amber-600'
+                                  }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-semibold text-amber-900">
+                                    {new Date(slot.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                  </p>
+                                  <p className="text-sm text-amber-700 flex items-center gap-1">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    {slot.time}
+                                  </p>
+                                </div>
+                                {selectedSlot?.date === slot.date && selectedSlot?.time === slot.time && (
+                                  <svg className="w-6 h-6 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="p-6 bg-amber-50 border-2 border-amber-200 rounded-lg text-center">
+                        <svg className="w-12 h-12 text-amber-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p className="font-medium text-amber-900 mb-1">No upcoming time slots</p>
+                        <p className="text-sm text-amber-700">All available slots have passed or been booked.</p>
+                      </div>
+                    )
+                  ) : (
+                    <div className="p-6 bg-red-50 border-2 border-red-200 rounded-lg text-center">
+                      <svg className="w-12 h-12 text-red-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="font-medium text-red-900 mb-1">No time slots available</p>
+                      <p className="text-sm text-red-700">The artist hasn't added any time slots yet.</p>
+                    </div>
+                  )}
+                </div>
+
+              {/* Personal Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-semibold text-amber-900 mb-2">Full Name *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={demoFormData.name}
+                    onChange={handleDemoFormChange}
+                    required
+                    className="w-full px-4 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="Enter your name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-amber-900 mb-2">Email *</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={demoFormData.email}
+                    onChange={handleDemoFormChange}
+                    required
+                    className="w-full px-4 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-amber-900 mb-2">Phone Number *</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={demoFormData.phone}
+                  onChange={handleDemoFormChange}
+                  required
+                  className="w-full px-4 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="+91 1234567890"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-amber-900 mb-2">Art Interest</label>
+                <input
+                  type="text"
+                  name="artInterest"
+                  value={demoFormData.artInterest}
+                  onChange={handleDemoFormChange}
+                  className="w-full px-4 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="e.g., Watercolor painting, Portrait drawing"
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-amber-900 mb-2">Message (Optional)</label>
+                <textarea
+                  name="message"
+                  value={demoFormData.message}
+                  onChange={handleDemoFormChange}
+                  rows="3"
+                  className="w-full px-4 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                  placeholder="Any specific topics or questions you'd like to cover..."
+                ></textarea>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDemoModal(false)}
+                  className="flex-1 px-6 py-3 border-2 border-amber-300 text-amber-900 rounded-lg font-semibold hover:bg-amber-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={demoSubmitting}
+                  className="flex-1 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {demoSubmitting ? 'Booking...' : 'Book Demo Session'}
+                </button>
+              </div>
+                </>
+              )}
+            </form>
           </div>
         </div>
       )}

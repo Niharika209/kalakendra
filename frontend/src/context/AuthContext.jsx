@@ -29,16 +29,23 @@ export const AuthProvider = ({ children }) => {
         setAccessToken(data.accessToken);
         setUser(data.user);
         localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('accessToken', data.accessToken);
         console.log('✅ Session restored from refresh token');
       } catch (error) {
         // Silently fail - no refresh token is normal for new visitors
         // Fallback to localStorage if refresh token fails
         try {
           const storedUser = localStorage.getItem('user');
+          const storedToken = localStorage.getItem('accessToken');
           if (storedUser) {
             const userData = JSON.parse(storedUser);
             setUser(userData);
-            console.log('ℹ️ User loaded from localStorage (limited session)');
+            if (storedToken) {
+              setAccessToken(storedToken);
+              console.log('ℹ️ User and token loaded from localStorage');
+            } else {
+              console.log('ℹ️ User loaded from localStorage (no token - limited session)');
+            }
           }
         } catch (e) {
           // No stored user - this is fine for new visitors
@@ -59,6 +66,7 @@ export const AuthProvider = ({ children }) => {
       setAccessToken(data.accessToken);
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('accessToken', data.accessToken);
       return data;
     } catch (error) {
       console.error('❌ Login failed:', error.message);
@@ -74,6 +82,7 @@ export const AuthProvider = ({ children }) => {
       setAccessToken(data.accessToken);
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('accessToken', data.accessToken);
       return data;
     } catch (error) {
       console.error('❌ Registration failed:', error.message);
@@ -93,6 +102,7 @@ export const AuthProvider = ({ children }) => {
       setAccessToken(null);
       setUser(null);
       localStorage.removeItem('user');
+      localStorage.removeItem('accessToken');
       console.log('✅ Logged out successfully');
     }
   };

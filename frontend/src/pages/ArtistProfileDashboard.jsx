@@ -32,6 +32,19 @@ function ArtistProfileDashboard() {
   const [uploadingGallery, setUploadingGallery] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const [selectedImage, setSelectedImage] = useState(null)
+  const [demoSettings, setDemoSettings] = useState({
+    enabled: false,
+    offersLive: false,
+    offersRecorded: false,
+    recordedSessionUrl: '',
+    demoDescription: '',
+    liveSessionSlots: [] // Array of {date, time, available}
+  })
+  const [uploadingRecording, setUploadingRecording] = useState(false)
+  const [newSlotDate, setNewSlotDate] = useState('')
+  const [newSlotTime, setNewSlotTime] = useState('')
+  const [demoBookings, setDemoBookings] = useState([])
+  const [loadingBookings, setLoadingBookings] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -58,6 +71,20 @@ function ArtistProfileDashboard() {
         const artist = artistResponse.data
         setArtistData(artist)
         
+        // Load demo settings if they exist
+        if (artist.demoSessionSettings) {
+          console.log('Loading demo settings from backend:', artist.demoSessionSettings)
+          setDemoSettings({
+            enabled: artist.demoSessionSettings.enabled || false,
+            offersLive: artist.demoSessionSettings.offersLive || false,
+            offersRecorded: artist.demoSessionSettings.offersRecorded || false,
+            recordedSessionUrl: artist.demoSessionSettings.recordedSessionUrl || '',
+            demoDescription: artist.demoSessionSettings.demoDescription || '',
+            liveSessionSlots: artist.demoSessionSettings.liveSessionSlots || []
+          })
+          console.log('Loaded slots:', artist.demoSessionSettings.liveSessionSlots)
+        }
+        
         // Get artist's workshops
         const workshopsResponse = await axios.get(`${API_URL}/workshops/artist/${artist._id}`)
         setMyWorkshops(workshopsResponse.data)
@@ -71,6 +98,47 @@ function ArtistProfileDashboard() {
     
     fetchArtistData()
   }, [user])
+
+  // Fetch demo bookings when demo sessions tab is active
+  useEffect(() => {
+    if (activeTab === 'demoSessions' && artistData?._id) {
+      fetchDemoBookings()
+    }
+  }, [activeTab, artistData])
+
+  // Refresh workshops when workshops tab is active
+  useEffect(() => {
+    if (activeTab === 'workshops' && artistData?._id) {
+      fetchWorkshops()
+    }
+  }, [activeTab, artistData])
+
+  const fetchWorkshops = async () => {
+    if (!artistData?._id) return
+    
+    try {
+      const response = await axios.get(`${API_URL}/workshops/artist/${artistData._id}`)
+      setMyWorkshops(response.data)
+      console.log('✅ Refreshed workshops, total enrolled:', response.data.reduce((sum, w) => sum + (w.enrolled || 0), 0))
+    } catch (error) {
+      console.error('Error fetching workshops:', error)
+    }
+  }
+
+  const fetchDemoBookings = async () => {
+    if (!artistData?._id) return
+    
+    try {
+      setLoadingBookings(true)
+      const response = await axios.get(`${API_URL}/demo-bookings/artist/${artistData._id}`)
+      setDemoBookings(response.data)
+      console.log('✅ Loaded', response.data.length, 'demo bookings')
+    } catch (error) {
+      console.error('Error fetching demo bookings:', error)
+    } finally {
+      setLoadingBookings(false)
+    }
+  }
 
   const handleSaveProfile = () => {
     if (!user) return
@@ -487,6 +555,16 @@ function ArtistProfileDashboard() {
                 Bookings ({bookings.length})
               </button>
               <button
+                onClick={() => setActiveTab('demoSessions')}
+                className={`pb-3 px-4 font-semibold transition-all duration-200 ${
+                  activeTab === 'demoSessions'
+                    ? 'border-b-2 border-purple-600 text-purple-900'
+                    : 'text-purple-600 hover:text-purple-900'
+                }`}
+              >
+                Demo Sessions
+              </button>
+              <button
                 onClick={() => setActiveTab('analytics')}
                 className={`pb-3 px-4 font-semibold transition-all duration-200 ${
                   activeTab === 'analytics'
@@ -557,8 +635,21 @@ function ArtistProfileDashboard() {
                           <p className="text-sm text-purple-700 mb-2 line-clamp-2">{workshop.description}</p>
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-lg font-bold text-purple-900">₹{workshop.price}</span>
-                            <span className="text-sm text-purple-600">{workshop.enrolled || 0} enrolled</span>
+                            <div className="flex items-center gap-1">
+                              <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                              </svg>
+                              <span className="text-sm font-semibold text-purple-600">{workshop.enrolled || 0} enrolled</span>
+                            </div>
                           </div>
+                          {workshop.revenue > 0 && (
+                            <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span className="text-sm font-semibold text-green-700">Revenue: ₹{workshop.revenue?.toLocaleString('en-IN') || 0}</span>
+                            </div>
+                          )}
                           <div className="flex gap-2 text-xs text-purple-600 mb-3">
                             <span className="px-2 py-1 bg-purple-50 rounded">{workshop.mode}</span>
                             <span className="px-2 py-1 bg-purple-50 rounded">{workshop.duration}</span>
@@ -703,6 +794,378 @@ function ArtistProfileDashboard() {
                     </table>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Demo Sessions Tab */}
+            {activeTab === 'demoSessions' && (
+              <div className="animate-fade-in">
+                <h2 className="text-xl font-bold text-purple-900 mb-6">Demo Session Settings</h2>
+                
+                <div className="space-y-6">
+                  {/* Enable Demo Sessions */}
+                  <div className="p-6 border border-purple-100 rounded-xl bg-purple-50">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="font-semibold text-purple-900 mb-1">Enable Demo Sessions</h3>
+                        <p className="text-sm text-purple-700">Allow learners to book free demo sessions</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={demoSettings.enabled}
+                          onChange={(e) => setDemoSettings({...demoSettings, enabled: e.target.checked})}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                      </label>
+                    </div>
+
+                    {demoSettings.enabled && (
+                      <div className="space-y-4 mt-6 pt-6 border-t border-purple-200">
+                        {/* Session Type Selection */}
+                        <div>
+                          <h4 className="font-semibold text-purple-900 mb-3">What type of demo sessions do you offer?</h4>
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-3 p-3 border border-purple-200 rounded-lg hover:bg-white cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={demoSettings.offersLive}
+                                onChange={(e) => setDemoSettings({...demoSettings, offersLive: e.target.checked})}
+                                className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                              />
+                              <div>
+                                <p className="font-medium text-purple-900">Live Online Sessions</p>
+                                <p className="text-sm text-purple-700">Schedule real-time sessions with learners</p>
+                              </div>
+                            </label>
+                            
+                            <label className="flex items-center gap-3 p-3 border border-purple-200 rounded-lg hover:bg-white cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={demoSettings.offersRecorded}
+                                onChange={(e) => setDemoSettings({...demoSettings, offersRecorded: e.target.checked})}
+                                className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                              />
+                              <div>
+                                <p className="font-medium text-purple-900">Pre-Recorded Sessions</p>
+                                <p className="text-sm text-purple-700">Share a recorded demo video</p>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Live Session Scheduling */}
+                        {demoSettings.offersLive && (
+                          <div className="p-4 bg-white border border-purple-200 rounded-lg">
+                            <h4 className="font-semibold text-purple-900 mb-3">Live Session Availability</h4>
+                            <p className="text-sm text-purple-700 mb-4">Add available time slots for live demo sessions</p>
+                            
+                            {/* Add New Slot Form */}
+                            <div className="flex gap-2 mb-4">
+                              <input
+                                type="date"
+                                value={newSlotDate}
+                                onChange={(e) => setNewSlotDate(e.target.value)}
+                                min={new Date().toISOString().split('T')[0]}
+                                className="flex-1 px-3 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              />
+                              <input
+                                type="time"
+                                value={newSlotTime}
+                                onChange={(e) => setNewSlotTime(e.target.value)}
+                                className="flex-1 px-3 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              />
+                              <button
+                                onClick={() => {
+                                  if (newSlotDate && newSlotTime) {
+                                    const newSlot = {
+                                      date: newSlotDate,
+                                      time: newSlotTime,
+                                      available: true
+                                    }
+                                    const updatedSlots = [...(demoSettings.liveSessionSlots || []), newSlot]
+                                    console.log('Adding new slot:', newSlot)
+                                    console.log('Current slots:', demoSettings.liveSessionSlots)
+                                    console.log('Updated slots:', updatedSlots)
+                                    
+                                    setDemoSettings({
+                                      ...demoSettings,
+                                      liveSessionSlots: updatedSlots
+                                    })
+                                    setNewSlotDate('')
+                                    setNewSlotTime('')
+                                  } else {
+                                    alert('Please select both date and time')
+                                  }
+                                }}
+                                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                              </button>
+                            </div>
+
+                            {/* Display Slots */}
+                            {demoSettings.liveSessionSlots && demoSettings.liveSessionSlots.length > 0 ? (
+                              <div className="space-y-2">
+                                {demoSettings.liveSessionSlots.map((slot, index) => (
+                                  <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                                    <div className="flex items-center gap-3">
+                                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                      </svg>
+                                      <div>
+                                        <p className="font-medium text-purple-900">
+                                          {new Date(slot.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </p>
+                                        <p className="text-sm text-purple-700">{slot.time}</p>
+                                      </div>
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        setDemoSettings({
+                                          ...demoSettings,
+                                          liveSessionSlots: demoSettings.liveSessionSlots.filter((_, i) => i !== index)
+                                        })
+                                      }}
+                                      className="text-red-600 hover:text-red-700 p-1"
+                                    >
+                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-6 text-purple-500 text-sm">
+                                No time slots added yet
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Recorded Session Upload */}
+                        {demoSettings.offersRecorded && (
+                          <div className="p-4 bg-white border border-purple-200 rounded-lg">
+                            <h4 className="font-semibold text-purple-900 mb-3">Upload Recorded Demo Session</h4>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-sm font-medium text-purple-900 mb-2">
+                                  Video URL (YouTube, Vimeo, or direct link)
+                                </label>
+                                <input
+                                  type="url"
+                                  value={demoSettings.recordedSessionUrl}
+                                  onChange={(e) => setDemoSettings({...demoSettings, recordedSessionUrl: e.target.value})}
+                                  placeholder="https://youtube.com/watch?v=..."
+                                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                />
+                              </div>
+                              
+                              <div className="text-sm text-purple-700 bg-purple-50 p-3 rounded-lg">
+                                <p className="font-medium mb-1">💡 Tips for your demo video:</p>
+                                <ul className="list-disc list-inside space-y-1 text-xs">
+                                  <li>Keep it between 5-15 minutes</li>
+                                  <li>Introduce yourself and your teaching style</li>
+                                  <li>Showcase a simple technique or project</li>
+                                  <li>Ensure good lighting and audio quality</li>
+                                </ul>
+                              </div>
+                              
+                              {demoSettings.recordedSessionUrl && (
+                                <div className="mt-3">
+                                  <p className="text-sm font-medium text-purple-900 mb-2">Preview:</p>
+                                  <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+                                    <iframe
+                                      src={demoSettings.recordedSessionUrl.replace('watch?v=', 'embed/')}
+                                      className="w-full h-full rounded-lg"
+                                      allowFullScreen
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Demo Description */}
+                        <div>
+                          <label className="block text-sm font-medium text-purple-900 mb-2">
+                            Demo Session Description (Optional)
+                          </label>
+                          <textarea
+                            value={demoSettings.demoDescription}
+                            onChange={(e) => setDemoSettings({...demoSettings, demoDescription: e.target.value})}
+                            placeholder="Describe what learners can expect from your demo session..."
+                            rows="3"
+                            className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          />
+                        </div>
+
+                        {/* Save Button */}
+                        <div className="flex justify-end pt-4 border-t border-purple-200">
+                          <button
+                            onClick={async () => {
+                              try {
+                                console.log('Saving demo settings...')
+                                console.log('Artist ID:', artistData._id)
+                                console.log('Settings to save:', demoSettings)
+                                console.log('Live slots in settings:', demoSettings.liveSessionSlots)
+                                console.log('Live slots count:', demoSettings.liveSessionSlots?.length || 0)
+                                console.log('API URL:', `${API_URL}/artists/${artistData._id}`)
+                                console.log('Access Token:', accessToken ? 'Present' : 'Missing')
+                                
+                                if (!artistData?._id) {
+                                  alert('Artist ID is missing. Please refresh the page.')
+                                  return
+                                }
+                                
+                                const response = await axios.patch(
+                                  `${API_URL}/artists/${artistData._id}`,
+                                  { demoSessionSettings: demoSettings },
+                                  { headers: { Authorization: `Bearer ${accessToken}` } }
+                                )
+                                
+                                console.log('Save response:', response.data)
+                                console.log('Updated demo settings:', response.data.demoSessionSettings)
+                                console.log('Live slots saved:', response.data.demoSessionSettings?.liveSessionSlots)
+                                setArtistData(response.data)
+                                setDemoSettings(response.data.demoSessionSettings || {
+                                  enabled: false,
+                                  offersLive: false,
+                                  offersRecorded: false,
+                                  recordedSessionUrl: '',
+                                  demoDescription: '',
+                                  liveSessionSlots: []
+                                })
+                                alert('Demo session settings saved successfully!')
+                              } catch (error) {
+                                console.error('Error saving demo settings:', error)
+                                console.error('Error response:', error.response?.data)
+                                console.error('Error status:', error.response?.status)
+                                alert(`Failed to save settings: ${error.response?.data?.error || error.message}`)
+                              }
+                            }}
+                            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Save Settings
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Demo Bookings Section */}
+                  {demoSettings.enabled && (
+                    <div className="p-6 border border-purple-100 rounded-xl">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold text-purple-900">Demo Session Bookings</h3>
+                        <button
+                          onClick={fetchDemoBookings}
+                          className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Refresh
+                        </button>
+                      </div>
+
+                      {loadingBookings ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                          <p className="text-sm text-purple-600 mt-2">Loading bookings...</p>
+                        </div>
+                      ) : demoBookings.length === 0 ? (
+                        <div className="text-center py-8 text-purple-600">
+                          <svg className="w-12 h-12 mx-auto mb-3 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <p className="text-sm">No demo bookings yet</p>
+                          <p className="text-xs text-purple-500 mt-1">When learners book demo sessions, they'll appear here</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {demoBookings.map((booking) => (
+                            <div key={booking._id} className="p-4 bg-purple-50 border border-purple-200 rounded-lg hover:shadow-md transition-shadow">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h4 className="font-semibold text-purple-900">{booking.learnerName}</h4>
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                      booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                                      booking.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                                      booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                      'bg-yellow-100 text-yellow-700'
+                                    }`}>
+                                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="space-y-1 text-sm text-purple-700">
+                                    <p className="flex items-center gap-2">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                      </svg>
+                                      {booking.learnerEmail}
+                                    </p>
+                                    <p className="flex items-center gap-2">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                      </svg>
+                                      {booking.learnerPhone}
+                                    </p>
+                                    
+                                    {booking.sessionType === 'live' && booking.selectedSlot && (
+                                      <p className="flex items-center gap-2 font-medium text-purple-900 mt-2">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        {new Date(booking.selectedSlot.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at {booking.selectedSlot.time}
+                                      </p>
+                                    )}
+                                    
+                                    {booking.artInterest && (
+                                      <p className="text-xs mt-2">
+                                        <span className="font-medium">Interest:</span> {booking.artInterest}
+                                      </p>
+                                    )}
+                                    
+                                    {booking.message && (
+                                      <p className="text-xs mt-1 italic">
+                                        "{booking.message}"
+                                      </p>
+                                    )}
+                                    
+                                    <p className="text-xs text-purple-500 mt-2">
+                                      Booked on {new Date(booking.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex flex-col gap-2 ml-4">
+                                  <span className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                                    booking.sessionType === 'live' 
+                                      ? 'bg-amber-100 text-amber-700' 
+                                      : 'bg-blue-100 text-blue-700'
+                                  }`}>
+                                    {booking.sessionType === 'live' ? '🎥 Live' : '▶️ Recorded'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
