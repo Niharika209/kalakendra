@@ -108,16 +108,6 @@ function WorkshopDetailPage() {
     }
   }
 
-  const handleImageClick = (imageUrl) => {
-    setSelectedImage(imageUrl)
-    setShowImageModal(true)
-  }
-
-  const closeModal = () => {
-    setShowImageModal(false)
-    setSelectedImage(null)
-  }
-
   if (loading) return (
     <>
       <Navbar />
