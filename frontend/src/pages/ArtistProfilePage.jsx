@@ -50,7 +50,7 @@ function ArtistProfilePage() {
     async function loadArtist() {
       setLoading(true)
       try {
-  const resp = await axios.get(`/api/artists/${id}`)
+  const resp = await axios.get(`${API_URL}/artists/${id}`)
         if (!cancelled) setArtist(resp.data)
       } catch (err) {
         // If we got a 404 and the id looks numeric (old links may use 1-based indexes),
@@ -63,7 +63,7 @@ function ArtistProfilePage() {
             const target = Array.isArray(listResp.data) ? listResp.data[idx] : null
             if (target) {
               const key = target.slug || target._id
-              const retry = await axios.get(`/api/artists/${key}`)
+              const retry = await axios.get(`${API_URL}/artists/${key}`)
               if (!cancelled) {
                 setArtist(retry.data)
                 setError(null)
