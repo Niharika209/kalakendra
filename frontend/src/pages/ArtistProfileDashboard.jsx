@@ -108,6 +108,12 @@ function ArtistProfileDashboard() {
 
   // Refresh workshops when workshops tab is active
   useEffect(() => {
+    if (activeTab === 'workshops' && artistData?._id) {
+      fetchWorkshops()
+    }
+  }, [activeTab, artistData])
+
+  const fetchWorkshops = async () => {
     if (!artistData?._id) return
     
     try {
