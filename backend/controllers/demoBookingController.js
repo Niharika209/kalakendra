@@ -7,7 +7,7 @@ export const createDemoBooking = async (req, res) => {
   try {
     console.log('📝 Creating demo booking:', req.body);
     
-    const { artistId, learnerEmail, sessionType, selectedSlot, ...bookingData } = req.body;
+    const { artistId, learnerEmail, sessionType, selectedSlot, sessionTitle, ...bookingData } = req.body;
     
     // Verify artist exists
     const artist = await Artist.findById(artistId);
@@ -24,6 +24,7 @@ export const createDemoBooking = async (req, res) => {
       learnerId: learner?._id || null,
       learnerEmail,
       sessionType,
+      sessionTitle: sessionTitle || 'Demo Session',
       selectedSlot: sessionType === 'live' ? selectedSlot : null,
       status: 'confirmed',
       ...bookingData

@@ -3,7 +3,8 @@ import {
   createBooking, 
   getAllBookings, 
   getBookingById, 
-  getBookingsByLearner, 
+  getBookingsByLearner,
+  getBookingsByArtist, 
   updateBooking, 
   deleteBooking 
 } from "../controllers/bookingController.js";
@@ -17,11 +18,14 @@ router.post("/", protect, createBooking);
 // READ - Get all bookings
 router.get("/", getAllBookings);
 
-// READ - Get single booking by ID
-router.get("/:id", getBookingById);
-
-// READ - Get bookings for a learner
+// READ - Get bookings for a learner (specific routes before generic :id)
 router.get("/learner/:learnerId", getBookingsByLearner);
+
+// READ - Get bookings for artist's workshops (specific routes before generic :id)
+router.get("/artist/:artistId", getBookingsByArtist);
+
+// READ - Get single booking by ID (generic :id route comes last)
+router.get("/:id", getBookingById);
 
 // UPDATE - Update booking
 router.put("/:id", updateBooking);

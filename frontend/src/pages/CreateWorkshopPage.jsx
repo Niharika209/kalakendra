@@ -235,7 +235,16 @@ function CreateWorkshopPage() {
       console.error('Error response:', err.response?.data)
       console.error('Error status:', err.response?.status)
       console.error('Error message:', err.message)
-      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to create workshop. Please try again.')
+      
+      // Handle specific error cases
+      if (err.response?.status === 401) {
+        setError('Your session has expired. Please log in again.')
+        setTimeout(() => navigate('/login'), 2000)
+      } else if (err.response?.status === 403) {
+        setError('Only artists can create workshops. Please log in with an artist account.')
+      } else {
+        setError(err.response?.data?.error || err.response?.data?.message || 'Failed to create workshop. Please try again.')
+      }
     } finally {
       setLoading(false)
     }

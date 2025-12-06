@@ -14,6 +14,7 @@ const demoBookingSchema = new mongoose.Schema({
   learnerName: { type: String, required: true },
   learnerEmail: { type: String, required: true },
   learnerPhone: { type: String, required: true },
+  sessionTitle: { type: String, default: 'Demo Session' },
   artInterest: { type: String, default: '' },
   message: { type: String, default: '' },
   sessionType: { 
