@@ -26,7 +26,7 @@ const workshopSchema = new mongoose.Schema({
   locality: { type: String },
   state: { type: String },
   coordinates: {
-    type: { type: String, enum: ['Point'], default: 'Point' },
+    type: { type: String, enum: ['Point'] },
     coordinates: { type: [Number], index: '2dsphere' } // [longitude, latitude]
   },
   

@@ -3,8 +3,8 @@ import Navbar from '../components/Navbar'
 import '../App.css'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+import waveBackground from '../assets/wave-background.svg'
 import { API_BASE_URL } from '../config/api.js'
-
 // All workshop data with subcategories
 const workshopData = {
   painting: {
@@ -259,16 +259,13 @@ function CategoryDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredWorkshops.sort((a, b) => new Date(b.date) - new Date(a.date)).map((w) => (
                     <div key={w._id} className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-2xl transition-all border border-amber-100 hover:border-amber-300 overflow-hidden transform hover:scale-105 duration-200">
-                      {(w.thumbnailUrl || w.imageUrl) && (
-                        <div className="h-48 overflow-hidden">
-                          <img 
-                            src={w.thumbnailUrl || w.imageUrl} 
-                            alt={w.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => e.target.style.display = 'none'}
-                          />
-                        </div>
-                      )}
+                      <div className="h-48 overflow-hidden">
+                        <img 
+                          src={w.thumbnailUrl || w.imageUrl || waveBackground} 
+                          alt={w.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                       <div className="p-6">
                         <h3 className="text-xl font-bold text-[#45453e] mb-3">{w.title}</h3>
                         <p className="text-sm text-amber-700 mb-2 flex items-center">

@@ -26,6 +26,12 @@ export const createWorkshop = async (req, res) => {
     console.log('📋 Full request body:', JSON.stringify(req.body, null, 2));
     console.log('👤 User from token:', req.user?._id, req.userRole);
     
+    // Check if user is an artist
+    if (req.userRole !== 'artist') {
+      console.error('❌ Authorization failed: Only artists can create workshops');
+      return res.status(403).json({ error: 'Only artists can create workshops' });
+    }
+    
     // Validate required fields
     if (!req.body.title) {
       console.error('❌ Validation failed: title is required');

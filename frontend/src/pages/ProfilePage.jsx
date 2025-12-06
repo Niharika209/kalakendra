@@ -529,16 +529,6 @@ function ProfilePage() {
                 Completed ({completedWorkshops.length})
               </button>
               <button
-                onClick={() => setActiveTab('wishlist')}
-                className={`pb-3 px-4 font-semibold transition-all duration-200 ${
-                  activeTab === 'wishlist'
-                    ? 'border-b-2 border-amber-600 text-amber-900'
-                    : 'text-amber-600 hover:text-amber-900'
-                }`}
-              >
-                Wishlist
-              </button>
-              <button
                 onClick={() => setActiveTab('settings')}
                 className={`pb-3 px-4 font-semibold transition-all duration-200 ${
                   activeTab === 'settings'
@@ -606,17 +596,6 @@ function ProfilePage() {
                     ))}
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Wishlist Tab */}
-            {activeTab === 'wishlist' && (
-              <div className="text-center py-12 animate-fade-in">
-                <svg className="w-16 h-16 text-amber-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-                <h3 className="text-xl font-semibold text-amber-900 mb-2">Your wishlist is empty</h3>
-                <p className="text-amber-700">Save workshops you're interested in for later</p>
               </div>
             )}
 

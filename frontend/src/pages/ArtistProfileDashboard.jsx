@@ -39,11 +39,14 @@ function ArtistProfileDashboard() {
     offersRecorded: false,
     recordedSessionUrl: '',
     demoDescription: '',
-    liveSessionSlots: [] // Array of {date, time, available}
+    liveSessionSlots: [], // Array of {date, time, available}
+    recurringSchedule: [] // Array of {day: 'Monday', time: '10:00'}
   })
   const [uploadingRecording, setUploadingRecording] = useState(false)
   const [newSlotDate, setNewSlotDate] = useState('')
   const [newSlotTime, setNewSlotTime] = useState('')
+  const [recurringDay, setRecurringDay] = useState('')
+  const [recurringTime, setRecurringTime] = useState('')
   const [demoBookings, setDemoBookings] = useState([])
   const [loadingBookings, setLoadingBookings] = useState(false)
 
@@ -107,6 +110,13 @@ function ArtistProfileDashboard() {
     }
   }, [activeTab, artistData])
 
+  // Fetch workshop bookings when bookings tab is active
+  useEffect(() => {
+    if (activeTab === 'bookings' && artistData?._id) {
+      fetchWorkshopBookings()
+    }
+  }, [activeTab, artistData])
+
   // Refresh workshops when workshops tab is active
   useEffect(() => {
     if (activeTab === 'workshops' && artistData?._id) {
@@ -138,6 +148,21 @@ function ArtistProfileDashboard() {
       console.error('Error fetching demo bookings:', error)
     } finally {
       setLoadingBookings(false)
+    }
+  }
+
+  const fetchWorkshopBookings = async () => {
+    if (!artistData?._id) return
+    
+    try {
+      setLoading(true)
+      const response = await axios.get(`${API_URL}/bookings/artist/${artistData._id}`)
+      setBookings(response.data)
+      console.log('✅ Loaded', response.data.length, 'workshop bookings')
+    } catch (error) {
+      console.error('Error fetching workshop bookings:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -738,7 +763,6 @@ function ArtistProfileDashboard() {
                             <button
                               onClick={() => handleRemoveGalleryImage(mediaUrl)}
                               className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="Remove media"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -756,37 +780,52 @@ function ArtistProfileDashboard() {
             {/* Bookings Tab */}
             {activeTab === 'bookings' && (
               <div className="animate-fade-in">
-                <h2 className="text-xl font-bold text-purple-900 mb-6">Recent Bookings</h2>
-                {bookings.length === 0 ? (
+                <h2 className="text-xl font-bold text-purple-900 mb-6">Workshop Enrollments</h2>
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-purple-700">Loading enrollments...</p>
+                  </div>
+                ) : bookings.length === 0 ? (
                   <div className="text-center py-12">
                     <svg className="w-16 h-16 text-purple-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
-                    <h3 className="text-xl font-semibold text-purple-900 mb-2">No bookings yet</h3>
-                    <p className="text-purple-700">Student bookings will appear here</p>
+                    <h3 className="text-xl font-semibold text-purple-900 mb-2">No enrollments yet</h3>
+                    <p className="text-purple-700">Student enrollments will appear here</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-purple-50">
                         <tr>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Student</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Student Name</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Email</th>
                           <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Workshop</th>
                           <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Date</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Enrolled On</th>
                           <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Amount</th>
                           <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {bookings.map((booking, idx) => (
-                          <tr key={idx} className="border-b border-purple-100 hover:bg-purple-50">
-                            <td className="px-4 py-3 text-sm text-purple-900">{booking.studentName}</td>
-                            <td className="px-4 py-3 text-sm text-purple-900">{booking.workshopTitle}</td>
-                            <td className="px-4 py-3 text-sm text-purple-700">{booking.date}</td>
-                            <td className="px-4 py-3 text-sm font-semibold text-purple-900">₹{booking.amount}</td>
+                        {bookings.map((booking) => (
+                          <tr key={booking._id} className="border-b border-purple-100 hover:bg-purple-50">
+                            <td className="px-4 py-3 text-sm text-purple-900">{booking.learner?.name || 'N/A'}</td>
+                            <td className="px-4 py-3 text-sm text-purple-700">{booking.learner?.email || 'N/A'}</td>
+                            <td className="px-4 py-3 text-sm text-purple-900">{booking.workshop?.title || 'N/A'}</td>
+                            <td className="px-4 py-3 text-sm text-purple-700">
+                              {booking.workshop?.date ? new Date(booking.workshop.date).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-purple-700">
+                              {booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-semibold text-purple-900">
+                              ₹{booking.totalAmount || booking.amount || 0}
+                            </td>
                             <td className="px-4 py-3">
                               <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                                {booking.status}
+                                {booking.paymentStatus || booking.status || 'Confirmed'}
                               </span>
                             </td>
                           </tr>
@@ -824,6 +863,20 @@ function ArtistProfileDashboard() {
 
                     {demoSettings.enabled && (
                       <div className="space-y-4 mt-6 pt-6 border-t border-purple-200">
+                        {/* Session Title */}
+                        <div>
+                          <label className="block text-sm font-medium text-purple-900 mb-2">
+                            Demo Session Title
+                          </label>
+                          <input
+                            type="text"
+                            value={demoSettings.sessionTitle || ''}
+                            onChange={(e) => setDemoSettings({...demoSettings, sessionTitle: e.target.value})}
+                            placeholder="e.g., Introduction to Classical Dance, Basic Painting Techniques"
+                            className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          />
+                        </div>
+
                         {/* Session Type Selection */}
                         <div>
                           <h4 className="font-semibold text-purple-900 mb-3">What type of demo sessions do you offer?</h4>
@@ -858,11 +911,100 @@ function ArtistProfileDashboard() {
 
                         {/* Live Session Scheduling */}
                         {demoSettings.offersLive && (
-                          <div className="p-4 bg-white border border-purple-200 rounded-lg">
-                            <h4 className="font-semibold text-purple-900 mb-3">Live Session Availability</h4>
-                            <p className="text-sm text-purple-700 mb-4">Add available time slots for live demo sessions</p>
-                            
-                            {/* Add New Slot Form */}
+                          <div className="space-y-4">
+                            {/* Recurring Weekly Schedule */}
+                            <div className="p-4 bg-white border border-purple-200 rounded-lg">
+                              <h4 className="font-semibold text-purple-900 mb-3">📅 Weekly Recurring Schedule</h4>
+                              <p className="text-sm text-purple-700 mb-4">Set regular days and times when you're available for demos</p>
+                              
+                              {/* Add Recurring Day/Time */}
+                              <div className="flex gap-2 mb-4">
+                                <select
+                                  value={recurringDay}
+                                  onChange={(e) => setRecurringDay(e.target.value)}
+                                  className="flex-1 px-3 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                >
+                                  <option value="">Select Day</option>
+                                  <option value="Monday">Monday</option>
+                                  <option value="Tuesday">Tuesday</option>
+                                  <option value="Wednesday">Wednesday</option>
+                                  <option value="Thursday">Thursday</option>
+                                  <option value="Friday">Friday</option>
+                                  <option value="Saturday">Saturday</option>
+                                  <option value="Sunday">Sunday</option>
+                                </select>
+                                <input
+                                  type="time"
+                                  value={recurringTime}
+                                  onChange={(e) => setRecurringTime(e.target.value)}
+                                  className="flex-1 px-3 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                />
+                                <button
+                                  onClick={() => {
+                                    if (recurringDay && recurringTime) {
+                                      const newSchedule = {
+                                        day: recurringDay,
+                                        time: recurringTime
+                                      }
+                                      setDemoSettings({
+                                        ...demoSettings,
+                                        recurringSchedule: [...(demoSettings.recurringSchedule || []), newSchedule]
+                                      })
+                                      setRecurringDay('')
+                                      setRecurringTime('')
+                                    } else {
+                                      alert('Please select both day and time')
+                                    }
+                                  }}
+                                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors whitespace-nowrap"
+                                >
+                                  Add
+                                </button>
+                              </div>
+
+                              {/* Display Recurring Schedule */}
+                              {demoSettings.recurringSchedule && demoSettings.recurringSchedule.length > 0 ? (
+                                <div className="space-y-2">
+                                  {demoSettings.recurringSchedule.map((schedule, index) => (
+                                    <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                                      <div className="flex items-center gap-3">
+                                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <div>
+                                          <p className="font-medium text-purple-900">Every {schedule.day}</p>
+                                          <p className="text-sm text-purple-700">{schedule.time}</p>
+                                        </div>
+                                      </div>
+                                      <button
+                                        onClick={() => {
+                                          setDemoSettings({
+                                            ...demoSettings,
+                                            recurringSchedule: demoSettings.recurringSchedule.filter((_, i) => i !== index)
+                                          })
+                                        }}
+                                        className="text-red-600 hover:text-red-700 p-1"
+                                      >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-center py-4 text-purple-500 text-sm">
+                                  No recurring schedule set
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Specific Date Slots */}
+                            <div className="p-4 bg-white border border-purple-200 rounded-lg">
+                              <h4 className="font-semibold text-purple-900 mb-3">📆 Specific Date Slots</h4>
+                              <p className="text-sm text-purple-700 mb-4">Add one-time slots for specific dates</p>
+                              
+                              {/* Add New Slot Form */}
                             <div className="flex gap-2 mb-4">
                               <input
                                 type="date"
@@ -941,10 +1083,11 @@ function ArtistProfileDashboard() {
                                 ))}
                               </div>
                             ) : (
-                              <div className="text-center py-6 text-purple-500 text-sm">
-                                No time slots added yet
+                              <div className="text-center py-4 text-purple-500 text-sm">
+                                No specific slots added yet
                               </div>
                             )}
+                            </div>
                           </div>
                         )}
 
@@ -1099,6 +1242,11 @@ function ArtistProfileDashboard() {
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
                                     <h4 className="font-semibold text-purple-900">{booking.learnerName}</h4>
+                                  </div>
+                                  {booking.sessionTitle && (
+                                    <p className="text-sm font-medium text-purple-800 mb-2">📚 {booking.sessionTitle}</p>
+                                  )}
+                                  <div className="flex items-center gap-2 mb-2">
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                       booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
                                       booking.status === 'completed' ? 'bg-blue-100 text-blue-700' :

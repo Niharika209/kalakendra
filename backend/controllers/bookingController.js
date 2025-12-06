@@ -73,6 +73,37 @@ export const getBookingsByLearner = async (req, res) => {
   }
 };
 
+// READ - Get all bookings for artist's workshops
+export const getBookingsByArtist = async (req, res) => {
+  try {
+    console.log('📋 Fetching bookings for artist:', req.params.artistId);
+    
+    // First, get all workshops by this artist
+    const workshops = await Workshop.find({ artist: req.params.artistId }).select('_id');
+    const workshopIds = workshops.map(w => w._id);
+    
+    console.log('Found', workshopIds.length, 'workshops for artist');
+    
+    // Then get all bookings for these workshops
+    const bookings = await Booking.find({ workshop: { $in: workshopIds } })
+      .populate({
+        path: "workshop",
+        select: "title date price mode"
+      })
+      .populate({
+        path: "learner",
+        select: "name email"
+      })
+      .sort({ createdAt: -1 });
+    
+    console.log('✅ Found', bookings.length, 'bookings');
+    res.json(bookings);
+  } catch (err) {
+    console.error('❌ Error fetching artist bookings:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // UPDATE - Update booking
 export const updateBooking = async (req, res) => {
   try {

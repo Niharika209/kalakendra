@@ -173,6 +173,7 @@ function ArtistProfilePage() {
         artInterest: demoFormData.artInterest,
         message: demoFormData.message,
         sessionType: 'live',
+        sessionTitle: artist.demoSettings?.sessionTitle || 'Demo Session',
         selectedSlot: selectedSlot
       }
 
@@ -298,16 +299,11 @@ function ArtistProfilePage() {
 
                 {/* Profile Info */}
                 <div className="md:col-span-2">
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="mb-4">
                     <div>
                       <h1 className="text-4xl font-bold text-amber-900 mb-2">{artist.name}</h1>
                       <p className="text-xl text-amber-700 mb-4">{artist.category}</p>
                     </div>
-                    <button className="border border-amber-300 text-amber-900 hover:bg-amber-50 bg-transparent px-4 py-2 rounded-md">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                      </svg>
-                    </button>
                   </div>
 
                   {/* Rating and Verification */}
@@ -444,7 +440,7 @@ function ArtistProfilePage() {
                                     const id = workshop._id || workshop.id
                                     const existing = cart.find((i) => i.id === id)
                                     if (existing) existing.quantity = (existing.quantity || 1) + 1
-                                    else cart.push({ id, title: workshop.title, price: workshop.price || 0, quantity: 1, artist: artist?.name || '', image: artist?.thumbnailUrl || artist?.imageUrl || artist?.image || placeholderImage })
+                                    else cart.push({ id, title: workshop.title, price: workshop.price || 0, quantity: 1, artist: artist?.name || '', image: workshop.thumbnailUrl || workshop.imageUrl || placeholderImage })
                                     localStorage.setItem('cart', JSON.stringify(cart))
                                   } catch (e) {
                                     console.warn('could not update cart', e)
@@ -587,6 +583,9 @@ function ArtistProfilePage() {
             <div className="sticky top-0 bg-white border-b border-amber-100 px-6 py-4 flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold text-amber-900">Book Free Demo Session</h2>
+                {artist.demoSettings?.sessionTitle && (
+                  <p className="text-sm text-amber-700 mt-1">📚 {artist.demoSettings.sessionTitle}</p>
+                )}
                 <p className="text-sm text-amber-700">with {artist?.name}</p>
               </div>
               <button
@@ -712,19 +711,39 @@ function ArtistProfilePage() {
                   <h3 className="text-lg font-semibold text-amber-900 mb-3">📅 Choose Your Session Time</h3>
                   <p className="text-sm text-amber-700 mb-4">Select an available time slot for your live demo session</p>
                   
-                  {(() => {
-                    console.log('=== DEMO BOOKING DEBUG ===')
-                    console.log('Full Artist Data:', artist)
-                    console.log('Demo Settings:', artist?.demoSessionSettings)
-                    console.log('Live Session Slots:', artist?.demoSessionSettings?.liveSessionSlots)
-                    console.log('Slots Type:', typeof artist?.demoSessionSettings?.liveSessionSlots)
-                    console.log('Is Array:', Array.isArray(artist?.demoSessionSettings?.liveSessionSlots))
-                    console.log('=========================')
-                    return null
-                  })()}
-                  
-                  {artist?.demoSessionSettings?.liveSessionSlots && Array.isArray(artist.demoSessionSettings.liveSessionSlots) && artist.demoSessionSettings.liveSessionSlots.length > 0 ? (
-                    artist.demoSessionSettings.liveSessionSlots.filter(slot => slot.available && new Date(`${slot.date}T${slot.time}`) > new Date()).length > 0 ? (
+                  {/* Recurring Weekly Schedule */}
+                  {artist?.demoSessionSettings?.recurringSchedule && Array.isArray(artist.demoSessionSettings.recurringSchedule) && artist.demoSessionSettings.recurringSchedule.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-md font-semibold text-amber-800 mb-3">🔄 Weekly Schedule</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        {artist.demoSessionSettings.recurringSchedule.map((schedule, index) => (
+                          <div
+                            key={index}
+                            className="p-4 border-2 border-amber-200 rounded-lg bg-amber-50"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded-full bg-amber-100">
+                                <svg className="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-amber-900">Every {schedule.day}</p>
+                                <p className="text-sm text-amber-700">{schedule.time}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-amber-600 italic">💡 These are recurring weekly slots. Contact the artist to book.</p>
+                    </div>
+                  )}
+
+                  {/* Specific Date Slots */}
+                  {artist?.demoSessionSettings?.liveSessionSlots && Array.isArray(artist.demoSessionSettings.liveSessionSlots) && artist.demoSessionSettings.liveSessionSlots.length > 0 && (
+                    <div>
+                      <h4 className="text-md font-semibold text-amber-800 mb-3">📆 Specific Dates</h4>
+                      {artist.demoSessionSettings.liveSessionSlots.filter(slot => slot.available && new Date(`${slot.date}T${slot.time}`) > new Date()).length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {artist.demoSessionSettings.liveSessionSlots
                           .filter(slot => slot.available && new Date(`${slot.date}T${slot.time}`) > new Date())
@@ -781,17 +800,10 @@ function ArtistProfilePage() {
                         <p className="font-medium text-amber-900 mb-1">No upcoming time slots</p>
                         <p className="text-sm text-amber-700">All available slots have passed or been booked.</p>
                       </div>
-                    )
-                  ) : (
-                    <div className="p-6 bg-red-50 border-2 border-red-200 rounded-lg text-center">
-                      <svg className="w-12 h-12 text-red-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="font-medium text-red-900 mb-1">No time slots available</p>
-                      <p className="text-sm text-red-700">The artist hasn't added any time slots yet.</p>
+                    )}
                     </div>
                   )}
-                </div>
+                  </div>
 
               {/* Personal Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -821,7 +833,7 @@ function ArtistProfilePage() {
                 </div>
               </div>
 
-              <div className="mb-4">
+              <div className="mb-6">
                 <label className="block text-sm font-semibold text-amber-900 mb-2">Phone Number *</label>
                 <input
                   type="tel"
@@ -832,30 +844,6 @@ function ArtistProfilePage() {
                   className="w-full px-4 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                   placeholder="+91 1234567890"
                 />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-amber-900 mb-2">Art Interest</label>
-                <input
-                  type="text"
-                  name="artInterest"
-                  value={demoFormData.artInterest}
-                  onChange={handleDemoFormChange}
-                  className="w-full px-4 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  placeholder="e.g., Watercolor painting, Portrait drawing"
-                />
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-amber-900 mb-2">Message (Optional)</label>
-                <textarea
-                  name="message"
-                  value={demoFormData.message}
-                  onChange={handleDemoFormChange}
-                  rows="3"
-                  className="w-full px-4 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
-                  placeholder="Any specific topics or questions you'd like to cover..."
-                ></textarea>
               </div>
 
               <div className="flex gap-3">

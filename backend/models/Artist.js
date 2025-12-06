@@ -92,7 +92,12 @@ const artistSchema = new mongoose.Schema({
     offersLive: { type: Boolean, default: false },
     offersRecorded: { type: Boolean, default: false },
     recordedSessionUrl: { type: String, default: null }, // URL to pre-recorded demo
+    sessionTitle: { type: String, default: 'Demo Session' },
     demoDescription: { type: String, default: '' },
+    recurringSchedule: [{ // Weekly recurring schedule
+      day: { type: String, required: true }, // 'Monday', 'Tuesday', etc.
+      time: { type: String, required: true } // '10:00', '14:30', etc.
+    }],
     liveSessionSlots: [{
       date: { type: String, required: true },
       time: { type: String, required: true },
