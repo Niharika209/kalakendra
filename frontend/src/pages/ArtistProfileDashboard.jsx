@@ -23,7 +23,6 @@ function ArtistProfileDashboard() {
   const [myWorkshops, setMyWorkshops] = useState([])
   const [artistData, setArtistData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [bookings, setBookings] = useState([])
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
@@ -109,12 +108,6 @@ function ArtistProfileDashboard() {
 
   // Refresh workshops when workshops tab is active
   useEffect(() => {
-    if (activeTab === 'workshops' && artistData?._id) {
-      fetchWorkshops()
-    }
-  }, [activeTab, artistData])
-
-  const fetchWorkshops = async () => {
     if (!artistData?._id) return
     
     try {
@@ -546,16 +539,6 @@ function ArtistProfileDashboard() {
                 Gallery ({artistData?.gallery?.length || 0})
               </button>
               <button
-                onClick={() => setActiveTab('bookings')}
-                className={`pb-3 px-4 font-semibold transition-all duration-200 ${
-                  activeTab === 'bookings'
-                    ? 'border-b-2 border-purple-600 text-purple-900'
-                    : 'text-purple-600 hover:text-purple-900'
-                }`}
-              >
-                Bookings ({bookings.length})
-              </button>
-              <button
                 onClick={() => setActiveTab('demoSessions')}
                 className={`pb-3 px-4 font-semibold transition-all duration-200 ${
                   activeTab === 'demoSessions'
@@ -749,51 +732,6 @@ function ArtistProfileDashboard() {
                       })}
                     </div>
                   </>
-                )}
-              </div>
-            )}
-
-            {/* Bookings Tab */}
-            {activeTab === 'bookings' && (
-              <div className="animate-fade-in">
-                <h2 className="text-xl font-bold text-purple-900 mb-6">Recent Bookings</h2>
-                {bookings.length === 0 ? (
-                  <div className="text-center py-12">
-                    <svg className="w-16 h-16 text-purple-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    <h3 className="text-xl font-semibold text-purple-900 mb-2">No bookings yet</h3>
-                    <p className="text-purple-700">Student bookings will appear here</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-purple-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Student</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Workshop</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Date</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Amount</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-purple-900">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {bookings.map((booking, idx) => (
-                          <tr key={idx} className="border-b border-purple-100 hover:bg-purple-50">
-                            <td className="px-4 py-3 text-sm text-purple-900">{booking.studentName}</td>
-                            <td className="px-4 py-3 text-sm text-purple-900">{booking.workshopTitle}</td>
-                            <td className="px-4 py-3 text-sm text-purple-700">{booking.date}</td>
-                            <td className="px-4 py-3 text-sm font-semibold text-purple-900">₹{booking.amount}</td>
-                            <td className="px-4 py-3">
-                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                                {booking.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
                 )}
               </div>
             )}
