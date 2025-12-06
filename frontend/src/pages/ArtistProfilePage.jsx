@@ -179,7 +179,7 @@ function ArtistProfilePage() {
       const response = await axios.post(`${API_URL}/demo-bookings`, bookingData)
       
       // Show success confirmation
-      alert(`🎉 Demo session confirmed!\n\nYour live session with ${artist.name} has been booked for:\n📅 ${new Date(selectedSlot.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}\n🕐 ${selectedSlot.time}\n\nThe artist will contact you at ${demoFormData.email} with session details.`)
+      alert(`🎉 Demo session confirmed!\n\nYour live session with ${artist.name} has been booked for:\n📅 ${new Date(selectedSlot.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}\n🕐 ${selectedSlot.time}\n\nView your booking in your profile's Enrolled section.`)
       
       setShowDemoModal(false)
       setDemoFormData({

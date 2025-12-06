@@ -16,6 +16,7 @@ function ProfilePage() {
   const [activeTab, setActiveTab] = useState(location.state?.tab || 'enrolled')
   const [enrolledWorkshops, setEnrolledWorkshops] = useState([])
   const [completedWorkshops, setCompletedWorkshops] = useState([])
+  const [demoBookings, setDemoBookings] = useState([])
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
@@ -57,8 +58,19 @@ function ProfilePage() {
       }
     }
 
+    const loadDemoBookings = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/demo-bookings/learner/${user.email}`)
+        setDemoBookings(response.data)
+        console.log('✅ Loaded', response.data.length, 'demo bookings')
+      } catch (error) {
+        console.error('Error fetching demo bookings:', error)
+      }
+    }
+
     if (user?.email) {
       loadWorkshops()
+      loadDemoBookings()
     }
   }, [user])
 
@@ -470,8 +482,8 @@ function ProfilePage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-amber-900">{enrolledWorkshops.length}</p>
-                  <p className="text-sm text-amber-700">Enrolled Workshops</p>
+                  <p className="text-2xl font-bold text-amber-900">{enrolledWorkshops.length + demoBookings.length}</p>
+                  <p className="text-sm text-amber-700">Enrolled Items</p>
                 </div>
               </div>
             </div>
@@ -498,7 +510,7 @@ function ProfilePage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-amber-900">{enrolledWorkshops.length}</p>
+                  <p className="text-2xl font-bold text-amber-900">{enrolledWorkshops.length + demoBookings.length}</p>
                   <p className="text-sm text-amber-700">In Progress</p>
                 </div>
               </div>
@@ -516,7 +528,7 @@ function ProfilePage() {
                     : 'text-amber-600 hover:text-amber-900'
                 }`}
               >
-                Enrolled ({enrolledWorkshops.length})
+                Enrolled ({enrolledWorkshops.length + demoBookings.length})
               </button>
               <button
                 onClick={() => setActiveTab('completed')}
@@ -553,22 +565,82 @@ function ProfilePage() {
             {/* Enrolled Workshops Tab */}
             {activeTab === 'enrolled' && (
               <div className="animate-fade-in">
-                {enrolledWorkshops.length === 0 ? (
+                {enrolledWorkshops.length === 0 && demoBookings.length === 0 ? (
                   <div className="text-center py-12">
                     <svg className="w-16 h-16 text-amber-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
-                    <h3 className="text-xl font-semibold text-amber-900 mb-2">No enrolled workshops</h3>
-                    <p className="text-amber-700 mb-4">Start learning by enrolling in a workshop</p>
+                    <h3 className="text-xl font-semibold text-amber-900 mb-2">No enrolled workshops or demo sessions</h3>
+                    <p className="text-amber-700 mb-4">Start learning by enrolling in a workshop or booking a demo session</p>
                     <Link to="/workshops" className="inline-block px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-all duration-200 transform hover:scale-105">
                       Explore Workshops
                     </Link>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {enrolledWorkshops.map((workshop, idx) => (
-                      <EnrolledWorkshopCard key={idx} workshop={workshop} />
-                    ))}
+                  <div className="space-y-6">
+                    {/* Demo Bookings Section */}
+                    {demoBookings.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-purple-900 mb-3">Demo Sessions ({demoBookings.length})</h3>
+                        <div className="space-y-4">
+                          {demoBookings.map((booking) => (
+                            <div key={booking._id} className="bg-white rounded-lg border-2 border-purple-200 p-4 hover:shadow-lg transition-all duration-200">
+                              <div className="flex items-start gap-4">
+                                <img
+                                  src={booking.artistId?.profileImage || placeholderImage}
+                                  alt={booking.artistId?.name}
+                                  className="w-20 h-20 rounded-lg object-cover"
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-start justify-between">
+                                    <div>
+                                      <h4 className="font-semibold text-purple-900">Demo Session with {booking.artistId?.name}</h4>
+                                      <p className="text-sm text-purple-600 capitalize">{booking.artistId?.category}</p>
+                                    </div>
+                                    <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                                      {booking.status}
+                                    </span>
+                                  </div>
+                                  {booking.selectedSlot && (
+                                    <div className="mt-2 flex flex-wrap gap-3 text-sm text-gray-600">
+                                      <div className="flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        {new Date(booking.selectedSlot.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        {booking.selectedSlot.time}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {booking.artInterest && (
+                                    <p className="mt-2 text-sm text-gray-600">
+                                      <span className="font-medium">Interest:</span> {booking.artInterest}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Enrolled Workshops Section */}
+                    {enrolledWorkshops.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-amber-900 mb-3">Workshops ({enrolledWorkshops.length})</h3>
+                        <div className="space-y-4">
+                          {enrolledWorkshops.map((workshop, idx) => (
+                            <EnrolledWorkshopCard key={idx} workshop={workshop} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
