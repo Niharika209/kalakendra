@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar'
 import '../App.css'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+import { API_BASE_URL } from '../config/api.js'
 
 function SubcategoryDetailPage() {
   const { categoryId, subcategoryName } = useParams()
@@ -24,7 +25,7 @@ function SubcategoryDetailPage() {
           // Fetch workshops for this subcategory (backend will match artist category/specialties)
           // Convert slug back to readable text for matching (e.g. classical-dance -> Classical Dance)
           const decoded = (subcategoryName || '').replace(/-/g, ' ')
-          const resp = await axios.get(`/api/workshops?category=${encodeURIComponent(decoded)}`)
+          const resp = await axios.get(`${API_BASE_URL}/workshops?category=${encodeURIComponent(decoded)}`)
           if (cancelled) return
           const all = Array.isArray(resp.data) ? resp.data : []
 

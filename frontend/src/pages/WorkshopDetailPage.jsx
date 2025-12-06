@@ -4,6 +4,7 @@ import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import placeholderImage from '../assets/wave-background.svg'
+import { API_BASE_URL } from '../config/api.js'
 
 function WorkshopDetailPage() {
   const { id } = useParams()
@@ -21,7 +22,7 @@ function WorkshopDetailPage() {
     async function load() {
       setLoading(true)
       try {
-        const resp = await axios.get(`/api/workshops/${id}`)
+        const resp = await axios.get(`${API_BASE_URL}/workshops/${id}`)
         if (!cancelled) setWorkshop(resp.data)
       } catch (err) {
         if (!cancelled) setError(err?.response?.data?.error || err.message || 'Could not load workshop')

@@ -7,6 +7,7 @@ import EnrolledWorkshopCard from '../components/EnrolledWorkshopCard'
 import CompletedWorkshopCard from '../components/CompletedWorkshopCard'
 import placeholderImage from '../assets/wave-background.svg'
 import { uploadImage, updateLearnerProfileImage, deleteLearnerProfileImage } from '../services/uploadService'
+import { API_BASE_URL } from '../config/api.js'
 
 function ProfilePage() {
   const navigate = useNavigate()
@@ -194,7 +195,7 @@ function ProfilePage() {
     setIsSubmitting(true)
     try {
       // API call to submit review
-      const response = await axios.post('/api/reviews', {
+      const response = await axios.post(`${API_BASE_URL}/reviews`, {
         workshopId: selectedWorkshop.id,
         rating: reviewData.rating,
         comment: reviewData.comment,

@@ -8,8 +8,9 @@ import ashaImage from '../assets/asha.png'
 import karanImage from '../assets/karan.png'
 import vikramImage from '../assets/vikram.png'
 import placeholderImage from '../assets/wave-background.svg'
+import { API_BASE_URL } from '../config/api.js'
 
-const API_URL = 'http://localhost:5000/api'
+const API_URL = API_BASE_URL
 
 function ArtistProfilePage() {
   const { id } = useParams()
@@ -49,7 +50,7 @@ function ArtistProfilePage() {
     async function loadArtist() {
       setLoading(true)
       try {
-  const resp = await axios.get(`/api/artists/${id}`)
+  const resp = await axios.get(`${API_URL}/artists/${id}`)
         if (!cancelled) setArtist(resp.data)
       } catch (err) {
         // If we got a 404 and the id looks numeric (old links may use 1-based indexes),
@@ -57,12 +58,12 @@ function ArtistProfilePage() {
         const status = err?.response?.status
         if (!cancelled && status === 404 && /^[0-9]+$/.test(id)) {
           try {
-            const listResp = await axios.get('/api/artists')
+            const listResp = await axios.get(`${API_URL}/artists`)
             const idx = Math.max(0, Number(id) - 1)
             const target = Array.isArray(listResp.data) ? listResp.data[idx] : null
             if (target) {
               const key = target.slug || target._id
-              const retry = await axios.get(`/api/artists/${key}`)
+              const retry = await axios.get(`${API_URL}/artists/${key}`)
               if (!cancelled) {
                 setArtist(retry.data)
                 setError(null)
