@@ -1,9 +1,6 @@
 #  KalaKendra 
 
-Find real artists. Book real workshops.
-
-Kalakendra is a MERN‑stack platform for discovering working artists who actually teach not just celebrities who do shows. It brings together dance, music, visual arts, pottery and more into one place where learners can browse workshops, compare options, and book in a few clicks.
-
+Kalakendra is a web platform that helps people discover and book art workshops with real, independent artists. It brings together dance, music, visual arts, and craft teachers who actively run classes, and makes it easy for learners to find them by location, style, and budget, then join sessions online or in person.
 
 ##  Tech Stack
 
