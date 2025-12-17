@@ -20,23 +20,23 @@ Kalakendra is a MERN‑stack platform for discovering working artists who actual
 - Cloudinary (Image hosting)
 - Razorpay (Payments)
 
-##  Installation
+## 🔧 Installation
 
 ### 1. Clone the repository
-bash
+```bash
 git clone https://github.com/niharika209/kalakendra.git
 cd kalakendra
-
+```
 
 ### 2. Setup Backend
 
-bash
+```bash
 cd backend
 npm install
+```
 
-
-Create a .env file in the backend directory:
-env
+Create a `.env` file in the backend directory:
+```env
 MONGO_URI=your_mongodb_connection_string
 JWT_ACCESS_SECRET=your_jwt_access_secret
 JWT_REFRESH_SECRET=your_jwt_refresh_secret
@@ -47,32 +47,34 @@ RAZORPAY_KEY_ID=your_razorpay_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 CLIENT_ORIGIN=http://localhost:5173
 PORT=5000
-
+```
 
 Start the backend:
-bash
+```bash
 npm start
-
+```
 
 ### 3. Setup Frontend
 
-bash
+```bash
 cd frontend
 npm install
+```
 
-
-Create a .env.local file in the frontend directory:
-env
+Create a `.env.local` file in the frontend directory:
+```env
 VITE_API_URL=http://localhost:5000/api
 VITE_RAZORPAY_KEY_ID=your_razorpay_key_id
-
+```
 
 Start the frontend:
-bash
+```bash
 npm run dev
+```
+
+The application will be available at `http://localhost:5173`
 
 
-The application will be available at http://localhost:5173
 
 
 ##  API Documentation
