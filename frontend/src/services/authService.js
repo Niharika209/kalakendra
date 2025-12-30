@@ -4,7 +4,7 @@ const API_URL = `${API_BASE_URL}/auth`;
 
 export const authService = {
   async register(userData) {
-    console.log('🌐 Sending registration request to backend:', userData.email);
+    console.log('Sending registration request to backend:', userData.email);
     try {
       const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
@@ -13,25 +13,25 @@ export const authService = {
         body: JSON.stringify(userData)
       });
       
-      console.log('📡 Registration response status:', response.status);
+      console.log('Registration response status:', response.status);
       
       if (!response.ok) {
         const error = await response.json();
-        console.error('❌ Registration request failed:', error);
+        console.error('Registration request failed:', error);
         throw new Error(error.message || 'Registration failed');
       }
       
       const data = await response.json();
-      console.log('✅ Registration request successful');
+      console.log('Registration request successful');
       return data;
     } catch (error) {
-      console.error('❌ Registration error:', error);
+      console.error('Registration error:', error);
       throw error;
     }
   },
 
   async login(credentials) {
-    console.log('🌐 Sending login request to backend:', credentials.email);
+    console.log('Sending login request to backend:', credentials.email);
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
@@ -91,7 +91,6 @@ export const authService = {
     });
     
     if (!response.ok) {
-      // Don't log error - 403 is expected when no refresh token exists
       throw new Error('Token refresh failed');
     }
     

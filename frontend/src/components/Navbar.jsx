@@ -20,7 +20,6 @@ function Navbar({ searchTerm = '', onSearchChange = null, searchPlaceholder = 'S
   // Use internal search if no external search is provided
   const currentSearch = searchTerm || internalSearch
   
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -31,7 +30,6 @@ function Navbar({ searchTerm = '', onSearchChange = null, searchPlaceholder = 'S
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
   
-  // Live search as user types using new search API
   useEffect(() => {
     const searchAll = async () => {
       if (currentSearch.trim().length < 2) {
@@ -44,7 +42,6 @@ function Navbar({ searchTerm = '', onSearchChange = null, searchPlaceholder = 'S
       setShowDropdown(true)
       
       try {
-        // Use the new autocomplete endpoint
         const response = await axios.get(`${API_URL}/search/autocomplete`, {
           params: { q: currentSearch, type: 'all' }
         });
@@ -52,7 +49,6 @@ function Navbar({ searchTerm = '', onSearchChange = null, searchPlaceholder = 'S
         if (response.data.success) {
           const suggestions = response.data.data.suggestions;
           
-          // Separate by type
           const artists = suggestions.filter(s => s.type === 'artist');
           const workshops = suggestions.filter(s => s.type === 'workshop');
           

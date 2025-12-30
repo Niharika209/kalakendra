@@ -1,9 +1,3 @@
-/**
- * WorkshopCard Component
- * 
- * Card component for displaying workshop in search results
- */
-
 import { useNavigate } from 'react-router-dom';
 
 const WorkshopCard = ({ workshop }) => {
@@ -18,7 +12,6 @@ const WorkshopCard = ({ workshop }) => {
       onClick={handleClick}
       className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-xl transition-shadow duration-300"
     >
-      {/* Thumbnail */}
       {workshop.thumbnail && (
         <div className="relative h-48 overflow-hidden">
           <img
@@ -34,19 +27,15 @@ const WorkshopCard = ({ workshop }) => {
         </div>
       )}
 
-      {/* Content */}
       <div className="p-4">
-        {/* Title */}
         <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
           {workshop.title}
         </h3>
 
-        {/* Category */}
         {workshop.category && (
           <p className="text-sm text-gray-600 mb-2">{workshop.category}</p>
         )}
 
-        {/* Location or Mode */}
         {workshop.city && (
           <div className="flex items-center text-sm text-gray-500 mb-2">
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

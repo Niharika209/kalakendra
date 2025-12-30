@@ -3,21 +3,19 @@ import upload from '../config/cloudinaryMulter.js';
 
 const router = express.Router();
 
-// POST /api/upload/image - Upload single image to Cloudinary
 router.post('/image', (req, res) => {
-  console.log('📤 Upload request received');
+  console.log('Upload request received');
   console.log('Content-Type:', req.get('Content-Type'));
   console.log('Query params:', req.query);
   console.log('Body keys:', Object.keys(req.body || {}));
   
-  // Set upload type for folder organization
   req.uploadType = req.query.type || 'images';
   
   const uploadHandler = upload.single('file');
   
   uploadHandler(req, res, (err) => {
     if (err) {
-      console.error('❌ Multer error:', err);
+      console.error('Multer error:', err);
       console.error('Error details:', {
         name: err.name,
         message: err.message,
@@ -35,7 +33,7 @@ router.post('/image', (req, res) => {
 
     try {
       if (!req.file) {
-        console.log('❌ No file in request');
+        console.log('No file in request');
         console.log('Request files:', req.files);
         console.log('Request body:', req.body);
         return res.status(400).json({ 
@@ -44,14 +42,13 @@ router.post('/image', (req, res) => {
         });
       }
 
-      console.log('✅ File uploaded successfully:', {
+      console.log('File uploaded successfully:', {
         filename: req.file.filename,
         path: req.file.path,
         size: req.file.size,
         mimetype: req.file.mimetype
       });
       
-      // Return the Cloudinary URL
       res.json({
         success: true,
         url: req.file.path,
@@ -59,7 +56,7 @@ router.post('/image', (req, res) => {
         message: 'Image uploaded successfully'
       });
     } catch (error) {
-      console.error('❌ Upload error:', error);
+      console.error('Upload error:', error);
       res.status(500).json({ 
         success: false, 
         message: 'Error uploading image',
@@ -69,9 +66,7 @@ router.post('/image', (req, res) => {
   });
 });
 
-// POST /api/upload/multiple - Upload multiple media files (images/videos)
 router.post('/multiple', (req, res) => {
-  // Set upload type for folder organization
   req.uploadType = req.query.type || 'gallery';
   
   const uploadHandler = upload.array('files', 10);

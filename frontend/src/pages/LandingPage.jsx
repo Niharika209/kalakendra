@@ -14,7 +14,6 @@ import ashaImage from '../assets/asha.png'
 import karanImage from '../assets/karan.png'
 import vikramImage from '../assets/vikram.png'
 
-// Art Forms Data
 const artForms = [
   {
     id: "dance",
@@ -46,7 +45,6 @@ const artForms = [
   },
 ];
 
-// Curated featured artists (4 only) shown by default. Backend results will be capped to 4 as well.
 const fallbackFeaturedArtists = [
   {
     _id: 'a1',
@@ -94,7 +92,6 @@ const fallbackFeaturedArtists = [
   },
 ]
 
-// Map of special local assets keyed by slug or exact name
 const specialArtistAssets = {
   'asha-patel': ashaImage,
   'Asha Patel': ashaImage,
@@ -122,22 +119,16 @@ function LandingPage() {
     let cancelled = false
     async function loadFeatured() {
       try {
-  // try backend first
         const resp = await axios.get(`${API_BASE_URL}/artists/featured`)
         if (!cancelled) {
           const data = resp?.data
-          // backend may return either an array or an object wrapper { artists: [...] }
           if (Array.isArray(data)) {
             setFeatured(data.slice(0, 4).map(applyAssetOverride))
           } else if (data && Array.isArray(data.artists)) {
             setFeatured(data.artists.slice(0, 4).map(applyAssetOverride))
-          } else {
-            // unexpected shape — keep curated fallback
-            console.warn('Unexpected /api/artists/featured response shape, expected array', data)
           }
         }
       } catch (err) {
-        console.warn('Could not load featured artists from backend, using fallback', err?.message)
       } finally {
         if (!cancelled) setLoadingFeatured(false)
       }
@@ -190,9 +181,9 @@ function LandingPage() {
                   {artForm.image ? (
                     <img src={artForm.image} alt={artForm.title} loading="lazy" className="w-full h-full object-center object-cover" />
                   ) : (
-                    <span className="text-4xl">
-                      {idx === 0 ? '💃' : idx === 1 ? '🎵' : idx === 2 ? '🎨' : '🏺'}
-                    </span>
+                    <div className="text-4xl font-bold text-amber-700">
+                      {artForm.title.charAt(0)}
+                    </div>
                   )}
                 </div>
                 <h3 className="text-xl font-semibold text-[#45453e] mb-2">{artForm.title}</h3>

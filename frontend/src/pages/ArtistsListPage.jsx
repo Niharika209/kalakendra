@@ -27,7 +27,6 @@ function ArtistsListPage() {
     return () => { cancelled = true }
   }, [])
 
-  // Filter artists based on search term (maintains sort order from backend)
   const filteredArtists = artists.filter(artist => {
     if (!searchTerm) return true
     const search = searchTerm.toLowerCase()
@@ -38,7 +37,6 @@ function ArtistsListPage() {
       artist.category?.toLowerCase().includes(search)
     )
   })
-  // Artists sorted by: (Featured × 1000) + (Rating × 200) + (Availability × 50) + (Popularity × 10) + (Experience × 5)
 
   return (
     <>

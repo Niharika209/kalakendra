@@ -1,7 +1,6 @@
 import Learner from "../models/Learner.js";
 import { deleteFromCloudinary } from "../utils/cloudinaryHelper.js";
 
-// CREATE - Signup a new learner
 export const createLearner = async (req, res) => {
   try {
     const learner = await Learner.create(req.body);
@@ -11,7 +10,6 @@ export const createLearner = async (req, res) => {
   }
 };
 
-// READ - Get all learners
 export const getAllLearners = async (req, res) => {
   try {
     const learners = await Learner.find();
@@ -21,7 +19,6 @@ export const getAllLearners = async (req, res) => {
   }
 };
 
-// READ - Get single learner by ID
 export const getLearnerById = async (req, res) => {
   try {
     const learner = await Learner.findById(req.params.id);
@@ -32,7 +29,6 @@ export const getLearnerById = async (req, res) => {
   }
 };
 
-// UPDATE - Update learner profile
 export const updateLearner = async (req, res) => {
   try {
     const learner = await Learner.findByIdAndUpdate(
@@ -47,7 +43,6 @@ export const updateLearner = async (req, res) => {
   }
 };
 
-// DELETE - Delete learner
 export const deleteLearner = async (req, res) => {
   try {
     const learner = await Learner.findByIdAndDelete(req.params.id);
@@ -58,7 +53,6 @@ export const deleteLearner = async (req, res) => {
   }
 };
 
-// Learner login (basic)
 export const loginLearner = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -70,7 +64,6 @@ export const loginLearner = async (req, res) => {
   }
 };
 
-// UPDATE - Update learner profile image
 export const updateLearnerProfileImage = async (req, res) => {
   try {
     const { profileImage } = req.body;
@@ -96,24 +89,19 @@ export const updateLearnerProfileImage = async (req, res) => {
   }
 };
 
-// DELETE - Delete learner profile image
 export const deleteLearnerProfileImage = async (req, res) => {
   try {
     const learner = await Learner.findById(req.params.id);
     if (!learner) return res.status(404).json({ error: "Learner not found" });
     
-    // Delete from Cloudinary if URL exists
     if (learner.profileImage) {
       try {
         await deleteFromCloudinary(learner.profileImage);
-        console.log('✅ Image deleted from Cloudinary');
+        console.log('Image deleted from Cloudinary');
       } catch (cloudinaryError) {
-        console.error('⚠️ Failed to delete from Cloudinary:', cloudinaryError);
-        // Continue anyway to update database
+        console.error('Failed to delete from Cloudinary:', cloudinaryError);
       }
     }
-    
-    // Update database
     learner.profileImage = undefined;
     await learner.save();
     

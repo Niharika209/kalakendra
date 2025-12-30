@@ -2,7 +2,6 @@ import jwt from "jsonwebtoken";
 import Artist from "../models/Artist.js";
 import Learner from "../models/Learner.js";
 
-// Protect routes - verify JWT token
 export const protect = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -12,7 +11,6 @@ export const protect = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.ACCESS_SECRET || 'access-secret');
     
-    // Try to find in Artist collection first, then Learner
     let profile = await Artist.findById(decoded.id).select('-password -refreshTokens');
     let userRole = 'artist';
     
@@ -33,7 +31,6 @@ export const protect = async (req, res, next) => {
   }
 };
 
-// Role-specific middleware
 export const artistAuth = async (req, res, next) => {
   const { email, password } = req.body;
   const artist = await Artist.findOne({ email, password });

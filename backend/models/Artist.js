@@ -4,53 +4,46 @@ const artistSchema = new mongoose.Schema({
   name: { type: String, required: true },
   slug: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // hashed later
+  password: { type: String, required: true },
   
-  // Categories and specialization (enhanced for search)
-  category: { type: String, required: true }, // primary artform (e.g., "Dance", "Music")
-  subcategories: [{ type: String }], // e.g., ["Classical", "Bharatanatyam", "Kathak"]
-  specialization: { type: String }, // Short title, e.g., "Classical Dance Instructor"
+  category: { type: String, required: true },
+  subcategories: [{ type: String }],
+  specialization: { type: String },
   
   bio: { type: String },
   
-  // Location (enhanced with geo-coordinates and structured address)
-  location: { type: String, required: true }, // Full address (backward compatible)
-  city: { type: String, index: true }, // e.g., "Jaipur", "Mumbai"
-  locality: { type: String }, // Neighborhood, e.g., "Malviya Nagar"
+  location: { type: String, required: true },
+  city: { type: String, index: true },
+  locality: { type: String },
   state: { type: String },
   country: { type: String, default: "India" },
   coordinates: {
     type: { type: String, enum: ['Point'], default: 'Point' },
-    coordinates: { type: [Number], index: '2dsphere' } // [longitude, latitude]
+    coordinates: { type: [Number], index: '2dsphere' }
   },
   
-  // Pricing and experience
   pricePerHour: { type: Number, required: true },
   experienceYears: { type: Number, default: 0 },
   
-  // Availability calendar (enhanced for search)
   availability: [{
     date: Date,
-    slots: [String] // e.g., ["09:00-11:00", "14:00-16:00"]
+    slots: [String]
   }],
   
-  // Availability metadata for quick filtering
   availabilitySettings: {
     isAvailable: { type: Boolean, default: true },
     modes: [{ type: String, enum: ['online', 'studio', 'both'], default: 'both' }],
     daysAvailable: [{ type: String, enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] }],
-    nextAvailableDate: { type: Date } // Cached field updated via background job
+    nextAvailableDate: { type: Date }
   },
 
-  // Featured / homepage
   featured: { type: Boolean, default: false },
   featuredOrder: { type: Number, default: 0 },
 
-  // Images and media
-  imageUrl: { type: String, default: null },        // full profile image (absolute URL)
-  thumbnailUrl: { type: String, default: null },    // small thumb for cards
-  gallery: [{                                       // gallery items (images and videos)
-    url: { type: String, required: false },  // Not required to avoid validation issues with partial data
+  imageUrl: { type: String, default: null },
+  thumbnailUrl: { type: String, default: null },
+  gallery: [{
+    url: { type: String, required: false },
     type: { type: String, enum: ['image', 'video'], default: 'image' },
     uploadedAt: { type: Date, default: Date.now }
   }],
@@ -62,15 +55,13 @@ const artistSchema = new mongoose.Schema({
     uploadedAt: Date,
   },
 
-  // Public stats (enhanced)
   rating: { type: Number, default: 0, min: 0, max: 5 },
   reviewsCount: { type: Number, default: 0 },
-  totalBookings: { type: Number, default: 0 }, // For popularity ranking
-  responseRate: { type: Number, default: 0, min: 0, max: 100 }, // Response rate percentage
+  totalBookings: { type: Number, default: 0 },
+  responseRate: { type: Number, default: 0, min: 0, max: 100 },
   specialties: [{ type: String }],
   
-  // Search optimization
-  searchText: { type: String }, // Concatenated text for full-text search (auto-generated)
+  searchText: { type: String },
   
   // Videos and testimonials for profile page
   videos: [{
@@ -86,32 +77,29 @@ const artistSchema = new mongoose.Schema({
     text: String,
     date: Date
   }],
-  // Demo session settings
   demoSessionSettings: {
     enabled: { type: Boolean, default: false },
     offersLive: { type: Boolean, default: false },
     offersRecorded: { type: Boolean, default: false },
-    recordedSessionUrl: { type: String, default: null }, // URL to pre-recorded demo
+    recordedSessionUrl: { type: String, default: null },
     demoDescription: { type: String, default: '' },
     liveSessionSlots: [{
       date: { type: String, required: true },
       time: { type: String, required: true },
       available: { type: Boolean, default: true },
-      bookedBy: { type: String, default: null } // Learner email
+      bookedBy: { type: String, default: null }
     }]
   },
   refreshTokens: { type: [String], default: [] }
 }, { timestamps: true });
 
-// Indexes for fast featured queries and lookups
 artistSchema.index({ featured: 1, featuredOrder: 1, updatedAt: -1 });
 artistSchema.index({ name: 'text', bio: 'text', specialties: 'text', searchText: 'text' });
-artistSchema.index({ city: 1, category: 1 }); // Common filter combination
-artistSchema.index({ rating: -1, totalBookings: -1 }); // For popularity sorting
-artistSchema.index({ 'coordinates': '2dsphere' }); // Geospatial queries
+artistSchema.index({ city: 1, category: 1 });
+artistSchema.index({ rating: -1, totalBookings: -1 });
+artistSchema.index({ 'coordinates': '2dsphere' });
 artistSchema.index({ 'availabilitySettings.isAvailable': 1, 'availabilitySettings.nextAvailableDate': 1 });
 
-// Pre-save hook to generate searchText for better full-text search
 artistSchema.pre('save', function(next) {
   this.searchText = [
     this.name,
@@ -124,10 +112,8 @@ artistSchema.pre('save', function(next) {
     this.specialties?.join(' ')
   ].filter(Boolean).join(' ').toLowerCase();
   
-  // Fix coordinates if invalid - either set to null or ensure proper GeoJSON format
   if (this.coordinates && this.coordinates.type === 'Point') {
     if (!this.coordinates.coordinates || this.coordinates.coordinates.length !== 2) {
-      // Invalid coordinates - remove the field entirely to avoid geo index errors
       this.coordinates = undefined;
     }
   }
@@ -135,19 +121,15 @@ artistSchema.pre('save', function(next) {
   next();
 });
 
-// Post-save hook for search index synchronization
 artistSchema.post('save', async function(doc) {
   try {
-    // Dynamic import to avoid circular dependencies
     const { searchSync } = await import('../services/searchSyncService.js');
     await searchSync.syncArtist(doc._id);
   } catch (error) {
     console.error('Search sync error (post-save):', error);
-    // Don't block the save operation if search sync fails
   }
 });
 
-// Post-remove hook for cleanup
 artistSchema.post('remove', async function(doc) {
   try {
     const { searchSync } = await import('../services/searchSyncService.js');

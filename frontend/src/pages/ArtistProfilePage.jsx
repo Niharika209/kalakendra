@@ -24,7 +24,7 @@ function ArtistProfilePage() {
   const [showImageModal, setShowImageModal] = useState(false)
   const [selectedImage, setSelectedImage] = useState('')
   const [showDemoModal, setShowDemoModal] = useState(false)
-  const [demoSessionType, setDemoSessionType] = useState('') // 'live' or 'recorded'
+  const [demoSessionType, setDemoSessionType] = useState('')
   const [demoFormData, setDemoFormData] = useState({
     name: '',
     email: '',
@@ -53,8 +53,6 @@ function ArtistProfilePage() {
   const resp = await axios.get(`${API_URL}/artists/${id}`)
         if (!cancelled) setArtist(resp.data)
       } catch (err) {
-        // If we got a 404 and the id looks numeric (old links may use 1-based indexes),
-        // try to resolve it by fetching all artists and mapping the numeric id to a slug.
         const status = err?.response?.status
         if (!cancelled && status === 404 && /^[0-9]+$/.test(id)) {
           try {
@@ -67,21 +65,17 @@ function ArtistProfilePage() {
               if (!cancelled) {
                 setArtist(retry.data)
                 setError(null)
-                // Redirect to canonical URL (slug or _id) so the browser shows stable URLs
                 try {
                   navigate(`/artists/${key}`, { replace: true })
                 } catch (navErr) {
-                  // ignore navigation errors in tests
                 }
                 return
               }
             }
           } catch (e) {
-            // swallow and fall through to the generic error below
           }
         }
 
-        // Keep error message short and user-friendly
         if (!cancelled) setError(err?.response?.data?.error || err.message || 'Could not load artist')
       } finally {
         if (!cancelled) setLoading(false)
@@ -99,14 +93,12 @@ function ArtistProfilePage() {
       return
     }
     
-    // Check if artist has demo sessions enabled
     const demoSettings = artist?.demoSessionSettings
     if (!demoSettings?.enabled) {
       alert('This artist is not currently offering demo sessions')
       return
     }
     
-    // Validate that artist has actually set up demo content
     const hasRecordedVideo = demoSettings.offersRecorded && demoSettings.recordedSessionUrl
     const hasLiveSlots = demoSettings.offersLive && demoSettings.liveSessionSlots && demoSettings.liveSessionSlots.length > 0
     
@@ -115,19 +107,17 @@ function ArtistProfilePage() {
       return
     }
     
-    // Set default session type based on what artist offers
     if (demoSettings.offersLive && hasLiveSlots && !hasRecordedVideo) {
       setDemoSessionType('live')
     } else if (hasRecordedVideo && !hasLiveSlots) {
       setDemoSessionType('recorded')
     } else if (hasLiveSlots) {
-      setDemoSessionType('live') // Default to live if both are available
+      setDemoSessionType('live')
     } else {
       setDemoSessionType('recorded')
     }
     
     setShowDemoModal(true)
-    // Pre-fill form with user data
     setDemoFormData(prev => ({
       ...prev,
       name: user.name || '',
@@ -143,14 +133,12 @@ function ArtistProfilePage() {
   const handleDemoSubmit = async (e) => {
     e.preventDefault()
     
-    // For recorded sessions, no booking needed - just acknowledge access
     if (demoSessionType === 'recorded') {
       alert('You now have access to the demo video! You can watch it anytime.')
       setShowDemoModal(false)
       return
     }
 
-    // For live sessions, validate form and slot selection
     if (!demoFormData.name || !demoFormData.email || !demoFormData.phone) {
       alert('Please fill in all required fields')
       return
@@ -164,7 +152,6 @@ function ArtistProfilePage() {
     setDemoSubmitting(true)
 
     try {
-      // Create demo booking via API
       const bookingData = {
         artistId: artist._id,
         learnerName: demoFormData.name,
@@ -178,8 +165,7 @@ function ArtistProfilePage() {
 
       const response = await axios.post(`${API_URL}/demo-bookings`, bookingData)
       
-      // Show success confirmation
-      alert(`🎉 Demo session confirmed!\n\nYour live session with ${artist.name} has been booked for:\n📅 ${new Date(selectedSlot.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}\n🕐 ${selectedSlot.time}\n\nView your booking in your profile's Enrolled section.`)
+      alert(`Demo session confirmed!\n\nYour live session with ${artist.name} has been booked for:\n${new Date(selectedSlot.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}\n${selectedSlot.time}\n\nView your booking in your profile's Enrolled section.`)
       
       setShowDemoModal(false)
       setDemoFormData({
@@ -191,17 +177,12 @@ function ArtistProfilePage() {
       })
       setSelectedSlot(null)
     } catch (error) {
-      console.error('Error booking demo session:', error)
       alert('Failed to book demo session. Please try again.')
     } finally {
       setDemoSubmitting(false)
     }
   }
 
-  // Helper getters with graceful fallbacks
-  // Prefer any image provided by the API, but for the seeded "Karan Mehta" entry
-  // use the local `karan.png` asset as an explicit override (fallbacks follow).
-  // Special-case local assets for seeded artists so their profile image uses the local file.
   const overrideImage = artist
     ? (artist.name === 'Asha Patel' || artist.slug === 'asha-patel')
       ? ashaImage
@@ -211,11 +192,9 @@ function ArtistProfilePage() {
           ? vikramImage
           : null
     : null
-  // Ensure any explicit override is used first, then prefer API images, then local fallbacks.
   const profileImage = overrideImage || artist?.imageUrl || artist?.image || artist?.thumbnailUrl || priyaImage || placeholderImage
   const pricePerHour = artist?.pricePerHour ?? artist?.hourlyRate ?? '-'
   const rating = artist?.rating ?? artist?.avgRating ?? '-'
-  // Normalize reviewsCount: prefer explicit number, otherwise use array length when reviews array exists
   const reviewsCount = typeof artist?.reviewsCount === 'number'
     ? artist.reviewsCount
     : Array.isArray(artist?.reviews)
@@ -223,7 +202,6 @@ function ArtistProfilePage() {
       : 0
   const specialties = Array.isArray(artist?.specialties) ? artist.specialties : []
   const workshops = Array.isArray(artist?.workshops) ? artist.workshops : []
-  // Prefer explicit testimonials array; fall back to reviews array if testimonials missing
   const testimonials = Array.isArray(artist?.testimonials)
     ? artist.testimonials
     : Array.isArray(artist?.reviews)
@@ -447,7 +425,6 @@ function ArtistProfilePage() {
                                     else cart.push({ id, title: workshop.title, price: workshop.price || 0, quantity: 1, artist: artist?.name || '', image: artist?.thumbnailUrl || artist?.imageUrl || artist?.image || placeholderImage })
                                     localStorage.setItem('cart', JSON.stringify(cart))
                                   } catch (e) {
-                                    console.warn('could not update cart', e)
                                   }
                                   navigate('/checkout')
                                 }}
@@ -709,19 +686,8 @@ function ArtistProfilePage() {
                 <>
                   {/* Time Slot Selection for Live Sessions */}
                   <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-amber-900 mb-3">📅 Choose Your Session Time</h3>
+                  <h3 className="text-lg font-semibold text-amber-900 mb-3">Choose Your Session Time</h3>
                   <p className="text-sm text-amber-700 mb-4">Select an available time slot for your live demo session</p>
-                  
-                  {(() => {
-                    console.log('=== DEMO BOOKING DEBUG ===')
-                    console.log('Full Artist Data:', artist)
-                    console.log('Demo Settings:', artist?.demoSessionSettings)
-                    console.log('Live Session Slots:', artist?.demoSessionSettings?.liveSessionSlots)
-                    console.log('Slots Type:', typeof artist?.demoSessionSettings?.liveSessionSlots)
-                    console.log('Is Array:', Array.isArray(artist?.demoSessionSettings?.liveSessionSlots))
-                    console.log('=========================')
-                    return null
-                  })()}
                   
                   {artist?.demoSessionSettings?.liveSessionSlots && Array.isArray(artist.demoSessionSettings.liveSessionSlots) && artist.demoSessionSettings.liveSessionSlots.length > 0 ? (
                     artist.demoSessionSettings.liveSessionSlots.filter(slot => slot.available && new Date(`${slot.date}T${slot.time}`) > new Date()).length > 0 ? (

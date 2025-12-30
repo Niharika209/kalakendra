@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 
+// Generate access and refresh tokens
 export function generateTokens(payload) {
-  // payload should be { id, role }
   const accessToken = jwt.sign(
     { id: payload.id, role: payload.role },
     process.env.ACCESS_SECRET || 'access-secret',

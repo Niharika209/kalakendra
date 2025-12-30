@@ -2,25 +2,19 @@ import { API_BASE_URL } from '../config/api.js'
 
 const API_URL = API_BASE_URL
 
-/**
- * Upload a single image to Cloudinary
- * @param {File} file - The image file to upload
- * @returns {Promise<{success: boolean, url: string, public_id: string}>}
- */
 export const uploadImage = async (file) => {
   try {
     const formData = new FormData()
     formData.append('file', file)
 
-    console.log('📤 Uploading to:', `${API_URL}/upload/image`)
-    console.log('📁 File details:', {
+    console.log('Uploading to:', `${API_URL}/upload/image`)
+    console.log('File details:', {
       name: file.name,
       type: file.type,
       size: file.size,
       lastModified: file.lastModified
     })
     
-    // Log FormData contents
     for (let pair of formData.entries()) {
       console.log('FormData entry:', pair[0], pair[1]);
     }
@@ -30,9 +24,9 @@ export const uploadImage = async (file) => {
       body: formData
     })
 
-    console.log('📨 Response status:', response.status)
+    console.log('Response status:', response.status)
     const contentType = response.headers.get('content-type')
-    console.log('📨 Response content-type:', contentType)
+    console.log('Response content-type:', contentType)
 
     if (!response.ok) {
       let errorMessage = 'Upload failed'
@@ -40,16 +34,16 @@ export const uploadImage = async (file) => {
       try {
         if (contentType?.includes('application/json')) {
           const error = await response.json()
-          console.error('❌ Server error response:', error)
+          console.error('Server error response:', error)
           errorMessage = error.message || error.error || 'Upload failed'
           errorDetails = error
         } else {
           const text = await response.text()
-          console.error('❌ Non-JSON response:', text.substring(0, 200))
+          console.error('Non-JSON response:', text.substring(0, 200))
           errorMessage = 'Server error - check if backend is running on port 5000'
         }
       } catch (e) {
-        console.error('❌ Error parsing response:', e)
+        console.error('Error parsing response:', e)
       }
       
       const err = new Error(errorMessage)
@@ -58,19 +52,14 @@ export const uploadImage = async (file) => {
     }
 
     const result = await response.json()
-    console.log('✅ Upload successful:', result)
+    console.log('Upload successful:', result)
     return result
   } catch (error) {
-    console.error('❌ Upload error:', error)
+    console.error('Upload error:', error)
     throw error
   }
 }
 
-/**
- * Upload multiple images to Cloudinary
- * @param {File[]} files - Array of image files to upload
- * @returns {Promise<{success: boolean, files: Array, count: number}>}
- */
 export const uploadMultipleImages = async (files) => {
   try {
     const formData = new FormData()
@@ -95,13 +84,6 @@ export const uploadMultipleImages = async (files) => {
   }
 }
 
-/**
- * Update artist profile image
- * @param {string} artistId - Artist ID
- * @param {string} imageUrl - Cloudinary image URL
- * @param {string} thumbnailUrl - Optional thumbnail URL
- * @returns {Promise<Object>}
- */
 export const updateArtistProfileImage = async (artistId, imageUrl, thumbnailUrl = null) => {
   try {
     const response = await fetch(`${API_URL}/artists/${artistId}/profile-image`, {
@@ -122,12 +104,6 @@ export const updateArtistProfileImage = async (artistId, imageUrl, thumbnailUrl 
   }
 }
 
-/**
- * Add media (images/videos) to artist gallery
- * @param {string} artistId - Artist ID
- * @param {Array<{url: string, type: string}>} mediaItems - Array of media objects with url and type
- * @returns {Promise<Object>}
- */
 export const addToArtistGallery = async (artistId, mediaItems) => {
   try {
     const response = await fetch(`${API_URL}/artists/${artistId}/gallery`, {
@@ -148,12 +124,6 @@ export const addToArtistGallery = async (artistId, mediaItems) => {
   }
 }
 
-/**
- * Remove media from artist gallery
- * @param {string} artistId - Artist ID
- * @param {string} mediaUrl - Cloudinary media URL to remove
- * @returns {Promise<Object>}
- */
 export const removeFromArtistGallery = async (artistId, mediaUrl) => {
   try {
     const response = await fetch(`${API_URL}/artists/${artistId}/gallery`, {
@@ -174,12 +144,6 @@ export const removeFromArtistGallery = async (artistId, mediaUrl) => {
   }
 }
 
-/**
- * Update learner profile image
- * @param {string} learnerId - Learner ID
- * @param {string} profileImage - Cloudinary image URL
- * @returns {Promise<Object>}
- */
 export const updateLearnerProfileImage = async (learnerId, profileImage) => {
   try {
     const response = await fetch(`${API_URL}/learners/${learnerId}/profile-image`, {
@@ -200,11 +164,6 @@ export const updateLearnerProfileImage = async (learnerId, profileImage) => {
   }
 }
 
-/**
- * Delete learner profile image
- * @param {string} learnerId - Learner ID
- * @returns {Promise<Object>}
- */
 export const deleteLearnerProfileImage = async (learnerId) => {
   try {
     const response = await fetch(`${API_URL}/learners/${learnerId}/profile-image`, {
@@ -224,11 +183,6 @@ export const deleteLearnerProfileImage = async (learnerId) => {
   }
 }
 
-/**
- * Delete artist profile image
- * @param {string} artistId - Artist ID
- * @returns {Promise<Object>}
- */
 export const deleteArtistProfileImage = async (artistId) => {
   try {
     const response = await fetch(`${API_URL}/artists/${artistId}/profile-image`, {
@@ -248,14 +202,6 @@ export const deleteArtistProfileImage = async (artistId) => {
   }
 }
 
-/**
- * Update workshop image
- * @param {string} workshopId - Workshop ID
- * @param {string} imageUrl - Cloudinary image URL
- * @param {string} thumbnailUrl - Optional thumbnail URL
- * @param {string} token - Auth token
- * @returns {Promise<Object>}
- */
 export const updateWorkshopImage = async (workshopId, imageUrl, thumbnailUrl = null, token) => {
   try {
     const response = await fetch(`${API_URL}/workshops/${workshopId}/image`, {

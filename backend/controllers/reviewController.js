@@ -2,23 +2,18 @@ import Review from "../models/Review.js";
 import Workshop from "../models/Workshop.js";
 import Artist from "../models/Artist.js";
 
-// CREATE - Submit a review
 export const createReview = async (req, res) => {
   try {
     const { workshopId, rating, comment, learnerName, learnerId } = req.body;
-
-    // Validate required fields
     if (!workshopId || !rating || !comment || !learnerName || !learnerId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Get workshop and artist info
     const workshop = await Workshop.findById(workshopId).populate('artist');
     if (!workshop) {
       return res.status(404).json({ error: "Workshop not found" });
     }
 
-    // Check if learner already reviewed this workshop
     const existingReview = await Review.findOne({ 
       workshop: workshopId, 
       learner: learnerId 
@@ -28,7 +23,6 @@ export const createReview = async (req, res) => {
       return res.status(400).json({ error: "You have already reviewed this workshop" });
     }
 
-    // Create review
     const review = await Review.create({
       workshop: workshopId,
       learner: learnerId,
@@ -38,7 +32,6 @@ export const createReview = async (req, res) => {
       reviewerName: learnerName
     });
 
-    // Update artist's testimonials
     await Artist.findByIdAndUpdate(
       workshop.artist._id,
       {
@@ -53,7 +46,6 @@ export const createReview = async (req, res) => {
       }
     );
 
-    // Update artist rating and review count
     const artistReviews = await Review.find({ artist: workshop.artist._id });
     const avgRating = artistReviews.reduce((sum, r) => sum + r.rating, 0) / artistReviews.length;
     
@@ -71,7 +63,6 @@ export const createReview = async (req, res) => {
   }
 };
 
-// READ - Get all reviews for a workshop
 export const getWorkshopReviews = async (req, res) => {
   try {
     const reviews = await Review.find({ workshop: req.params.workshopId })
@@ -83,7 +74,6 @@ export const getWorkshopReviews = async (req, res) => {
   }
 };
 
-// READ - Get all reviews by a learner
 export const getLearnerReviews = async (req, res) => {
   try {
     const reviews = await Review.find({ learner: req.params.learnerId })
@@ -96,7 +86,6 @@ export const getLearnerReviews = async (req, res) => {
   }
 };
 
-// READ - Get all reviews for an artist
 export const getArtistReviews = async (req, res) => {
   try {
     const reviews = await Review.find({ artist: req.params.artistId })
@@ -109,7 +98,6 @@ export const getArtistReviews = async (req, res) => {
   }
 };
 
-// UPDATE - Update a review
 export const updateReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
@@ -119,12 +107,10 @@ export const updateReview = async (req, res) => {
       return res.status(404).json({ error: "Review not found" });
     }
 
-    // Update review
     review.rating = rating || review.rating;
     review.comment = comment || review.comment;
     await review.save();
 
-    // Update artist testimonials
     const artist = await Artist.findById(review.artist);
     const testimonialIndex = artist.testimonials.findIndex(
       t => t.name === review.reviewerName && 
@@ -137,7 +123,6 @@ export const updateReview = async (req, res) => {
       await artist.save();
     }
 
-    // Recalculate artist rating
     const artistReviews = await Review.find({ artist: review.artist });
     const avgRating = artistReviews.reduce((sum, r) => sum + r.rating, 0) / artistReviews.length;
     
@@ -151,7 +136,6 @@ export const updateReview = async (req, res) => {
   }
 };
 
-// DELETE - Delete a review
 export const deleteReview = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
@@ -161,10 +145,8 @@ export const deleteReview = async (req, res) => {
 
     const artistId = review.artist;
     
-    // Delete review
     await Review.findByIdAndDelete(req.params.id);
 
-    // Remove from artist testimonials
     await Artist.findByIdAndUpdate(artistId, {
       $pull: {
         testimonials: {
@@ -174,7 +156,6 @@ export const deleteReview = async (req, res) => {
       }
     });
 
-    // Recalculate artist rating and count
     const artistReviews = await Review.find({ artist: artistId });
     const avgRating = artistReviews.length > 0 
       ? artistReviews.reduce((sum, r) => sum + r.rating, 0) / artistReviews.length 

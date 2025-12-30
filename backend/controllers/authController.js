@@ -4,41 +4,34 @@ import Artist from '../models/Artist.js';
 import Learner from '../models/Learner.js';
 import { generateTokens } from '../utils/generateTokens.js';
 
-// Register new user
 async function register(req, res) {
   try {
-    console.log('📝 Registration attempt received:', { 
+    console.log('Registration attempt received:', { 
       name: req.body.name, 
       email: req.body.email, 
       role: req.body.role 
     });
 
     const { name, email, password, role } = req.body;
-    
-    // Validate required fields
     if (!name || !email || !password) {
-      console.log('❌ Registration failed: Missing required fields');
+      console.log('Registration failed: Missing required fields');
       return res.status(400).json({ message: 'Missing required fields: name, email, and password are required' });
     }
 
-    // Check if email exists in Artist or Learner collections
     const existingArtist = await Artist.findOne({ email });
     const existingLearner = await Learner.findOne({ email });
     if (existingArtist || existingLearner) {
-      console.log('❌ Registration failed: Email already exists -', email);
+      console.log('Registration failed: Email already exists -', email);
       return res.status(400).json({ message: 'Email already exists' });
     }
 
-    // Hash password
-    console.log('🔐 Hashing password...');
+    console.log('Hashing password...');
     const hashed = await bcrypt.hash(password, 10);
     
     let profile;
     const userRole = role || 'learner';
-
-    // Create Artist or Learner profile directly
     if (userRole === 'artist') {
-      console.log('🎨 Creating Artist profile...');
+      console.log('Creating Artist profile...');
       const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const timestamp = Date.now().toString().slice(-6);
       profile = await Artist.create({
@@ -53,21 +46,21 @@ async function register(req, res) {
         specialties: [],
         featured: false
       });
-      console.log('✅ Artist created successfully:', {
+      console.log('Artist created successfully:', {
         id: profile._id,
         name: profile.name,
         email: profile.email,
         createdAt: profile.createdAt
       });
     } else {
-      console.log('🎓 Creating Learner profile...');
+      console.log('Creating Learner profile...');
       profile = await Learner.create({
         name,
         email,
         password: hashed,
         location: 'Not specified'
       });
-      console.log('✅ Learner created successfully:', {
+      console.log('Learner created successfully:', {
         id: profile._id,
         name: profile.name,
         email: profile.email,
@@ -75,21 +68,19 @@ async function register(req, res) {
       });
     }
 
-    // Generate tokens
-    console.log('🎫 Generating authentication tokens...');
+    console.log('Generating authentication tokens...');
     const tokenPayload = { id: profile._id, role: userRole };
     const { accessToken, refreshToken } = generateTokens(tokenPayload);
     profile.refreshTokens.push(refreshToken);
     await profile.save();
 
-    // Set cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax'
     });
 
-    console.log('🎉 Registration completed successfully for:', profile.email);
+    console.log('Registration completed successfully for:', profile.email);
     
     res.json({ 
       accessToken, 
@@ -102,7 +93,7 @@ async function register(req, res) {
       } 
     });
   } catch (err) {
-    console.error('❌ Registration error:', err);
+    console.error('Registration error:', err);
     console.error('Error details:', {
       message: err.message,
       stack: err.stack,
@@ -115,18 +106,16 @@ async function register(req, res) {
   }
 }
 
-// Login user
 async function login(req, res) {
   try {
-    console.log('🔑 Login attempt received for:', req.body.email);
+    console.log('Login attempt received for:', req.body.email);
     
     const { email, password } = req.body;
     if (!email || !password) {
-      console.log('❌ Login failed: Missing email or password');
+      console.log('Login failed: Missing email or password');
       return res.status(400).json({ message: 'Email and password required' });
     }
 
-    // Try to find in Artist collection first, then Learner
     let profile = await Artist.findOne({ email });
     let userRole = 'artist';
     
@@ -136,27 +125,23 @@ async function login(req, res) {
     }
     
     if (!profile) {
-      console.log('❌ Login failed: Account not found -', email);
+      console.log('Login failed: Account not found -', email);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Verify password
     const isValid = await bcrypt.compare(password, profile.password);
     if (!isValid) {
-      console.log('❌ Login failed: Invalid password for -', email);
+      console.log('Login failed: Invalid password for -', email);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    console.log(`✅ Login successful for ${userRole}:`, email);
+    console.log(`Login successful for ${userRole}:`, email);
     
     const tokenPayload = { id: profile._id, role: userRole };
     const { accessToken, refreshToken } = generateTokens(tokenPayload);
     profile.refreshTokens.push(refreshToken);
-    
-    // Clean up gallery array if it's an artist - remove any items with undefined/null URLs
     if (userRole === 'artist' && profile.gallery) {
       const validGalleryItems = profile.gallery.filter(item => item && item.url);
-      // Update directly in database to avoid validation issues
       await Artist.findByIdAndUpdate(
         profile._id,
         { 
@@ -176,7 +161,7 @@ async function login(req, res) {
       sameSite: 'lax'
     });
 
-    console.log('🎉 Login completed successfully for:', profile.email);
+    console.log('Login completed successfully for:', profile.email);
 
     res.json({ 
       accessToken, 
@@ -189,12 +174,11 @@ async function login(req, res) {
       } 
     });
   } catch (err) {
-    console.error('❌ Login error:', err);
+    console.error('Login error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 }
 
-// Refresh access token
 async function refresh(req, res) {
   try {
     const { refreshToken } = req.cookies;
@@ -203,8 +187,6 @@ async function refresh(req, res) {
     }
 
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET || 'refresh-secret');
-    
-    // Try to find in Artist collection first, then Learner
     let profile = await Artist.findById(decoded.id);
     let userRole = 'artist';
     
@@ -217,11 +199,8 @@ async function refresh(req, res) {
       return res.status(403).json({ message: 'Invalid refresh token' });
     }
 
-    // Generate new tokens
     const tokenPayload = { id: profile._id, role: userRole };
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(tokenPayload);
-    
-    // Remove old refresh token and add new one
     profile.refreshTokens = profile.refreshTokens.filter(t => t !== refreshToken);
     profile.refreshTokens.push(newRefreshToken);
     
@@ -254,14 +233,11 @@ async function refresh(req, res) {
   }
 }
 
-// Logout user
 async function logout(req, res) {
   try {
     const { refreshToken } = req.cookies;
     if (refreshToken) {
       const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET || 'refresh-secret');
-      
-      // Try Artist first, then Learner
       let profile = await Artist.findById(decoded.id);
       if (!profile) {
         profile = await Learner.findById(decoded.id);
@@ -282,10 +258,8 @@ async function logout(req, res) {
   }
 }
 
-// Get current user (protected route)
 async function getMe(req, res) {
   try {
-    // req.user already contains the profile from middleware
     const userWithRole = { ...req.user.toObject(), role: req.userRole };
     res.json({ user: userWithRole });
   } catch (err) {

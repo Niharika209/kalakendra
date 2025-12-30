@@ -3,7 +3,6 @@ import Navbar from '../components/Navbar'
 import '../App.css'
 import { useState } from 'react'
 
-// All workshop categories
 const workshopCategories = [
   { id: 'painting', title: "Painting", description: "Explore various painting techniques", count: 14 },
   { id: 'drawing', title: "Drawing", description: "Master the art of drawing", count: 5 },
@@ -27,7 +26,6 @@ const workshopCategories = [
 function WorkshopsListPage() {
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Filter categories based on search term
   const filteredCategories = workshopCategories.filter(category => {
     if (!searchTerm) return true
     const search = searchTerm.toLowerCase()

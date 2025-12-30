@@ -18,11 +18,9 @@ export const AuthProvider = ({ children }) => {
   const initRef = useRef(false);
 
   useEffect(() => {
-    // Prevent double initialization in React StrictMode
     if (initRef.current) return;
     initRef.current = true;
 
-    // Try to refresh token on mount or load from localStorage
     const initAuth = async () => {
       try {
         const data = await authService.refreshToken();
@@ -30,10 +28,8 @@ export const AuthProvider = ({ children }) => {
         setUser(data.user);
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('accessToken', data.accessToken);
-        console.log('✅ Session restored from refresh token');
+        console.log('Session restored from refresh token');
       } catch (error) {
-        // Silently fail - no refresh token is normal for new visitors
-        // Fallback to localStorage if refresh token fails
         try {
           const storedUser = localStorage.getItem('user');
           const storedToken = localStorage.getItem('accessToken');
@@ -42,13 +38,12 @@ export const AuthProvider = ({ children }) => {
             setUser(userData);
             if (storedToken) {
               setAccessToken(storedToken);
-              console.log('ℹ️ User and token loaded from localStorage');
+              console.log('User and token loaded from localStorage');
             } else {
-              console.log('ℹ️ User loaded from localStorage (no token - limited session)');
+              console.log('User loaded from localStorage (no token - limited session)');
             }
           }
         } catch (e) {
-          // No stored user - this is fine for new visitors
         }
       } finally {
         setLoading(false);
@@ -59,39 +54,39 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (credentials) => {
-    console.log('🔑 Attempting login for:', credentials.email);
+    console.log('Attempting login for:', credentials.email);
     try {
       const data = await authService.login(credentials);
-      console.log('✅ Login successful:', data.user);
+      console.log('Login successful:', data.user);
       setAccessToken(data.accessToken);
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('accessToken', data.accessToken);
       return data;
     } catch (error) {
-      console.error('❌ Login failed:', error.message);
+      console.error('Login failed:', error.message);
       throw error;
     }
   };
 
   const register = async (userData) => {
-    console.log('📝 Attempting registration for:', userData.email);
+    console.log('Attempting registration for:', userData.email);
     try {
       const data = await authService.register(userData);
-      console.log('✅ Registration successful:', data.user);
+      console.log('Registration successful:', data.user);
       setAccessToken(data.accessToken);
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('accessToken', data.accessToken);
       return data;
     } catch (error) {
-      console.error('❌ Registration failed:', error.message);
+      console.error('Registration failed:', error.message);
       throw error;
     }
   };
 
   const logout = async () => {
-    console.log('👋 Logging out...');
+    console.log('Logging out...');
     try {
       if (accessToken) {
         await authService.logout(accessToken);
@@ -103,7 +98,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       localStorage.removeItem('user');
       localStorage.removeItem('accessToken');
-      console.log('✅ Logged out successfully');
+      console.log('Logged out successfully');
     }
   };
 
@@ -111,7 +106,7 @@ export const AuthProvider = ({ children }) => {
     const updatedUser = { ...user, ...updates };
     setUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
-    console.log('✅ User updated:', updates);
+    console.log('User updated:', updates);
   };
 
   const value = {

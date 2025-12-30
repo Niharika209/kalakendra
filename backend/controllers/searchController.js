@@ -1,36 +1,6 @@
-/**
- * Search Controller
- * 
- * Handles all search operations for artists and workshops.
- * Features:
- * - Multi-field keyword search with autocomplete
- * - Category, price, rating, location filters
- * - Geo-proximity search (near me)
- * - Availability filtering
- * - Multi-signal ranking
- * - Faceted search results
- * - Pagination
- */
-
 import Artist from '../models/Artist.js';
 import Workshop from '../models/Workshop.js';
 
-/**
- * Search Artists with Advanced Filters
- * 
- * Query Parameters:
- * - q: Search keyword (name, bio, category, city)
- * - category: Art form category
- * - subcategories: Comma-separated subcategories
- * - city: City name
- * - lat, lng, radius: Geo-proximity (radius in km)
- * - minPrice, maxPrice: Price range
- * - minRating: Minimum rating (0-5)
- * - available: true/false for immediate availability
- * - mode: online/studio/both
- * - sortBy: relevance/rating/price/distance/popularity
- * - page, limit: Pagination
- */
 export const searchArtists = async (req, res) => {
   try {
     const {
@@ -68,7 +38,6 @@ export const searchArtists = async (req, res) => {
       filter.category = category;
     }
     
-    // Subcategories filter
     if (subcategories) {
       filter.subcategories = { $in: subcategories.split(',') };
     }
@@ -90,12 +59,10 @@ export const searchArtists = async (req, res) => {
       filter.rating = { $gte: parseFloat(minRating) };
     }
     
-    // Availability filter
     if (available === 'true') {
       filter['availabilitySettings.isAvailable'] = true;
     }
     
-    // Experience filter
     if (experienceYears) {
       filter.experienceYears = { $gte: parseInt(experienceYears) };
     }
@@ -105,12 +72,8 @@ export const searchArtists = async (req, res) => {
     switch (sortBy) {
       case 'rating':
       case 'top_rated':
-        // For rating sort, prioritize artists with reviews
-        // Artists with 0 reviews will appear at the end
         sort = { rating: -1, reviewsCount: -1, totalBookings: -1 };
-        // Optional: Add filter to exclude 0-rated artists
         if (!minRating) {
-          filter.rating = { $gt: 0 }; // Exclude unrated artists
         }
         break;
       case 'price_low':
@@ -131,7 +94,6 @@ export const searchArtists = async (req, res) => {
         break;
       case 'recommended':
       default:
-        // Recommended: Featured first, then rated highly, then available, then popular
         sort = { featured: -1, featuredOrder: 1, rating: -1, 'availabilitySettings.isAvailable': -1, totalBookings: -1 };
     }
     
@@ -144,14 +106,12 @@ export const searchArtists = async (req, res) => {
       .limit(parseInt(limit))
       .lean();
     
-    // Get total count
     const total = await Artist.countDocuments(filter);
     const totalPages = Math.ceil(total / parseInt(limit));
     
     // Get facets (filter counts)
     const facets = {};
     
-    // Category facets
     const categoryFacets = await Artist.aggregate([
       { $match: filter },
       { $group: { _id: '$category', count: { $sum: 1 } } },
@@ -183,9 +143,6 @@ export const searchArtists = async (req, res) => {
   }
 };
 
-/**
- * Search Workshops with Advanced Filters
- */
 export const searchWorkshops = async (req, res) => {
   try {
     const {
@@ -294,7 +251,6 @@ export const searchWorkshops = async (req, res) => {
       case 'rating':
       case 'top_rated':
         sort = { averageRating: -1, reviewCount: -1, bookingCount: -1 };
-        // Filter out unrated workshops for better results
         if (!minRating) {
           filter.averageRating = { $gt: 0 };
         }
@@ -321,7 +277,6 @@ export const searchWorkshops = async (req, res) => {
         break;
       case 'recommended':
       default:
-        // Recommended: Featured artist first, then rating, then seats available
         sort = { averageRating: -1, enrolled: -1, seatsAvailable: -1 };
     }
     
@@ -374,9 +329,6 @@ export const searchWorkshops = async (req, res) => {
   }
 };
 
-/**
- * Autocomplete / Typeahead Suggestions
- */
 export const autocomplete = async (req, res) => {
   try {
     const { q, type = 'all' } = req.query;
@@ -389,7 +341,6 @@ export const autocomplete = async (req, res) => {
     const searchRegex = new RegExp(q, 'i');
     
     if (type === 'all' || type === 'artists') {
-      // Use regular query with text search until Atlas Search indexes are created
       const artists = await Artist.find({
         $or: [
           { name: searchRegex },
@@ -402,7 +353,6 @@ export const autocomplete = async (req, res) => {
         .limit(5)
         .lean();
       
-      // Format results with type field
       const formattedArtists = artists.map(a => ({
         type: 'artist',
         _id: a._id,
@@ -417,7 +367,6 @@ export const autocomplete = async (req, res) => {
     }
     
     if (type === 'all' || type === 'workshops') {
-      // Use regular query with text search until Atlas Search indexes are created
       const workshops = await Workshop.find({
         $or: [
           { title: searchRegex },
@@ -430,7 +379,6 @@ export const autocomplete = async (req, res) => {
         .limit(5)
         .lean();
       
-      // Format results with type field
       const formattedWorkshops = workshops.map(w => ({
         type: 'workshop',
         _id: w._id,
@@ -461,15 +409,11 @@ export const autocomplete = async (req, res) => {
   }
 };
 
-/**
- * Helper: Build Atlas Search stage for artists
- */
 function buildArtistSearchStage(query, filters) {
   const must = [];
   const filter = [];
   const should = [];
   
-  // Text search with autocomplete and fuzzy matching
   if (query && query.trim()) {
     must.push({
       compound: {
@@ -579,7 +523,6 @@ function buildArtistSearchStage(query, filters) {
     });
   }
   
-  // Boost featured artists
   should.push({
     equals: {
       path: 'featured',
@@ -598,9 +541,6 @@ function buildArtistSearchStage(query, filters) {
   };
 }
 
-/**
- * Helper: Build Atlas Search stage for workshops
- */
 function buildWorkshopSearchStage(query, filters) {
   const must = [];
   const filter = [];
@@ -710,7 +650,6 @@ function buildWorkshopSearchStage(query, filters) {
     filter.push({ equals: { path: 'materialProvided', value: true } });
   }
   
-  // Only active workshops
   filter.push({ text: { query: 'active', path: 'status' } });
   
   return {
@@ -723,61 +662,52 @@ function buildWorkshopSearchStage(query, filters) {
   };
 }
 
-/**
- * Helper: Calculate multi-signal ranking score for artists
- */
 function calculateArtistRankingScore() {
   return {
     $add: [
-      { $multiply: ['$searchScore', 0.4] },        // 40% text relevance
-      { $multiply: ['$rating', 4] },               // 20% rating (scaled to 0-20)
-      { $multiply: ['$totalBookings', 0.01] },     // 10% popularity
-      { $multiply: ['$reviewsCount', 0.05] },      // 5% social proof
-      { $multiply: ['$experienceYears', 0.5] },    // 5% experience
+      { $multiply: ['$searchScore', 0.4] },
+      { $multiply: ['$rating', 4] },
+      { $multiply: ['$totalBookings', 0.01] },
+      { $multiply: ['$reviewsCount', 0.05] },
+      { $multiply: ['$experienceYears', 0.5] },
       {
         $cond: [
           '$availabilitySettings.isAvailable',
-          10,                                       // 10% availability bonus
+          10,
           0
         ]
       },
       {
-        $cond: ['$featured', 10, 0]                // 10% featured bonus
+        $cond: ['$featured', 10, 0]
       }
     ]
   };
 }
 
-/**
- * Helper: Calculate ranking score for workshops
- */
 function calculateWorkshopRankingScore() {
   return {
     $add: [
-      { $multiply: ['$searchScore', 0.4] },        // 40% text relevance
-      { $multiply: ['$averageRating', 5] },        // 25% rating
-      { $multiply: ['$reviewCount', 0.2] },        // 10% social proof
-      { $multiply: ['$artistInfo.rating', 3] },    // 15% artist reputation
+      { $multiply: ['$searchScore', 0.4] },
+      { $multiply: ['$averageRating', 5] },
+      { $multiply: ['$reviewCount', 0.2] },
+      { $multiply: ['$artistInfo.rating', 3] },
       {
         $cond: [
           { $gt: ['$seatsAvailable', 0] },
-          5,                                        // 5% seat availability
+          5,
           0
         ]
       },
       {
-        $cond: ['$certificateProvided', 3, 0]      // 3% certificate bonus
+        $cond: ['$certificateProvided', 3, 0]
       },
       {
-        $cond: ['$materialProvided', 2, 0]         // 2% materials bonus
+        $cond: ['$materialProvided', 2, 0]
       }
     ]
   };
 }
 
-/**
- * Helper: Build sort stage based on sortBy parameter
- */
 function buildSortStage(sortBy, hasLocation) {
   switch (sortBy) {
     case 'rating':
@@ -798,9 +728,6 @@ function buildSortStage(sortBy, hasLocation) {
   }
 }
 
-/**
- * Helper: Get faceted search results (category counts, etc.)
- */
 async function getArtistFacets(query, filters) {
   try {
     const facetPipeline = [];

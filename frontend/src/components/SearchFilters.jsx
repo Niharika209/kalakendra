@@ -1,10 +1,3 @@
-/**
- * SearchFilters Component
- * 
- * Comprehensive filters panel for search results
- * Features: Category, subcategory, price range, rating, location, availability, mode
- */
-
 import { useState, useEffect } from 'react';
 
 const SearchFilters = ({ 

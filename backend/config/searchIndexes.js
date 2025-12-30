@@ -1,23 +1,8 @@
-/**
- * MongoDB Atlas Search Index Definitions
- * 
- * To set up these indexes:
- * 1. Go to MongoDB Atlas Dashboard
- * 2. Navigate to your cluster → Search tab
- * 3. Click "Create Search Index"
- * 4. Choose "JSON Editor"
- * 5. Paste the corresponding index definition below
- * 6. Name it as specified (e.g., "artists_search", "workshops_search")
- * 
- * OR use the MongoDB CLI/API to create programmatically
- */
-
 export const artistsSearchIndex = {
   "name": "artists_search",
   "mappings": {
     "dynamic": false,
     "fields": {
-      // Full-text search fields with autocomplete support
       "name": {
         "type": "string",
         "analyzer": "lucene.standard",
@@ -32,7 +17,7 @@ export const artistsSearchIndex = {
             "foldDiacritics": true
           },
           "keyword": {
-            "type": "stringFacet" // For exact matching and faceting
+            "type": "stringFacet"
           }
         }
       },
@@ -42,12 +27,10 @@ export const artistsSearchIndex = {
       },
       "searchText": {
         "type": "string",
-        "analyzer": "lucene.standard" // Combined text field for broad search
+        "analyzer": "lucene.standard"
       },
-      
-      // Category fields for filtering
       "category": {
-        "type": "stringFacet" // Enables faceted search
+        "type": "stringFacet"
       },
       "subcategories": {
         "type": "stringFacet"
@@ -61,23 +44,19 @@ export const artistsSearchIndex = {
           }
         }
       },
-      
-      // Location fields
       "city": {
         "type": "stringFacet"
       },
       "locality": {
         "type": "string",
-        "analyzer": "lucene.keyword" // Exact match for neighborhoods
+        "analyzer": "lucene.keyword"
       },
       "state": {
         "type": "stringFacet"
       },
       "coordinates": {
-        "type": "geo" // Enables geospatial queries
+        "type": "geo"
       },
-      
-      // Numeric fields for filtering and sorting
       "pricePerHour": {
         "type": "number",
         "indexIntegers": true,
@@ -99,8 +78,6 @@ export const artistsSearchIndex = {
         "type": "number",
         "indexIntegers": true
       },
-      
-      // Availability fields
       "availabilitySettings.isAvailable": {
         "type": "boolean"
       },
@@ -110,8 +87,6 @@ export const artistsSearchIndex = {
       "availabilitySettings.nextAvailableDate": {
         "type": "date"
       },
-      
-      // Metadata
       "featured": {
         "type": "boolean"
       },
@@ -130,7 +105,6 @@ export const workshopsSearchIndex = {
   "mappings": {
     "dynamic": false,
     "fields": {
-      // Full-text search fields
       "title": {
         "type": "string",
         "analyzer": "lucene.standard",
@@ -156,8 +130,6 @@ export const workshopsSearchIndex = {
         "type": "string",
         "analyzer": "lucene.standard"
       },
-      
-      // Category fields
       "category": {
         "type": "stringFacet"
       },
@@ -170,8 +142,6 @@ export const workshopsSearchIndex = {
       "targetAudience": {
         "type": "stringFacet"
       },
-      
-      // Location fields
       "city": {
         "type": "stringFacet"
       },
@@ -188,8 +158,6 @@ export const workshopsSearchIndex = {
       "coordinates": {
         "type": "geo"
       },
-      
-      // Numeric fields
       "price": {
         "type": "number",
         "indexIntegers": true,
@@ -227,16 +195,12 @@ export const workshopsSearchIndex = {
         "type": "number",
         "indexIntegers": true
       },
-      
-      // Date fields
       "date": {
         "type": "date"
       },
       "createdAt": {
         "type": "date"
       },
-      
-      // Boolean fields
       "isFullyBooked": {
         "type": "boolean"
       },
@@ -246,8 +210,6 @@ export const workshopsSearchIndex = {
       "certificateProvided": {
         "type": "boolean"
       },
-      
-      // Status
       "status": {
         "type": "stringFacet"
       }
@@ -255,10 +217,6 @@ export const workshopsSearchIndex = {
   }
 };
 
-/**
- * Custom Analyzers (Optional - for advanced text processing)
- * Add these if you need typo tolerance or language-specific search
- */
 export const customAnalyzers = {
   "analyzers": [
     {
@@ -274,24 +232,19 @@ export const customAnalyzers = {
           "type": "lowercase"
         },
         {
-          "type": "asciiFolding" // Handles diacritics (é → e)
+          "type": "asciiFolding"
         }
       ]
     }
   ]
 };
 
-/**
- * Search Query Builder Utilities
- */
 export const buildSearchQuery = {
-  // Compound query for multi-field search with filters
   compound: (searchTerm, filters = {}) => {
     const must = [];
     const filter = [];
     const should = [];
     
-    // Text search across multiple fields
     if (searchTerm) {
       must.push({
         compound: {
@@ -300,7 +253,7 @@ export const buildSearchQuery = {
               autocomplete: {
                 query: searchTerm,
                 path: "name.autocomplete",
-                score: { boost: { value: 3 } } // Boost name matches
+                score: { boost: { value: 3 } }
               }
             },
             {
@@ -308,7 +261,7 @@ export const buildSearchQuery = {
                 query: searchTerm,
                 path: ["name", "bio", "specialization", "searchText"],
                 fuzzy: {
-                  maxEdits: 1, // Typo tolerance
+                  maxEdits: 1,
                   prefixLength: 2
                 }
               }
@@ -319,7 +272,6 @@ export const buildSearchQuery = {
       });
     }
     
-    // Category filter
     if (filters.category) {
       filter.push({
         text: {
@@ -329,7 +281,6 @@ export const buildSearchQuery = {
       });
     }
     
-    // Subcategories filter
     if (filters.subcategories?.length) {
       filter.push({
         text: {
@@ -339,7 +290,6 @@ export const buildSearchQuery = {
       });
     }
     
-    // City filter
     if (filters.city) {
       filter.push({
         text: {
@@ -349,7 +299,6 @@ export const buildSearchQuery = {
       });
     }
     
-    // Price range
     if (filters.minPrice || filters.maxPrice) {
       filter.push({
         range: {
@@ -360,7 +309,6 @@ export const buildSearchQuery = {
       });
     }
     
-    // Rating filter
     if (filters.minRating) {
       filter.push({
         range: {
@@ -370,7 +318,6 @@ export const buildSearchQuery = {
       });
     }
     
-    // Availability
     if (filters.isAvailable !== undefined) {
       filter.push({
         equals: {
@@ -380,7 +327,6 @@ export const buildSearchQuery = {
       });
     }
     
-    // Mode (online/studio)
     if (filters.mode) {
       filter.push({
         text: {
@@ -390,7 +336,6 @@ export const buildSearchQuery = {
       });
     }
     
-    // Geo-proximity search (near me)
     if (filters.coordinates && filters.radiusKm) {
       filter.push({
         geoWithin: {
@@ -398,9 +343,9 @@ export const buildSearchQuery = {
           circle: {
             center: {
               type: "Point",
-              coordinates: filters.coordinates // [longitude, latitude]
+              coordinates: filters.coordinates
             },
-            radius: filters.radiusKm * 1000 // Convert km to meters
+            radius: filters.radiusKm * 1000
           }
         }
       });

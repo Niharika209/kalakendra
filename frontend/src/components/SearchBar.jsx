@@ -1,10 +1,3 @@
-/**
- * SearchBar Component
- * 
- * Advanced search bar with autocomplete/typeahead functionality
- * Features: Debounced input, keyboard navigation, category filtering
- */
-
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAutocompleteSuggestions } from '../services/searchService';

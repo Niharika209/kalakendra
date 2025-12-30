@@ -1,58 +1,54 @@
 import Workshop from "../models/Workshop.js";
 import { deleteFromCloudinary } from "../utils/cloudinaryHelper.js";
 
-// READ - Get workshops by artist ID
 export const getWorkshopsByArtist = async (req, res) => {
   try {
     const { artistId } = req.params;
-    console.log('🔍 Fetching workshops for artist:', artistId);
+    console.log('Fetching workshops for artist:', artistId);
     
     const workshops = await Workshop.find({ artist: artistId })
       .populate('artist')
       .sort({ date: -1 });
     
-    console.log(`✅ Found ${workshops.length} workshops`);
+    console.log(`Found ${workshops.length} workshops`);
     res.json(workshops);
   } catch (err) {
-    console.error('❌ Error fetching artist workshops:', err);
+    console.error('Error fetching artist workshops:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// CREATE - Create a new workshop
 export const createWorkshop = async (req, res) => {
   try {
-    console.log('🎨 Workshop creation request received');
-    console.log('📋 Full request body:', JSON.stringify(req.body, null, 2));
-    console.log('👤 User from token:', req.user?._id, req.userRole);
-    
-    // Validate required fields
+    console.log('Workshop creation request received');
+    console.log('Full request body:', JSON.stringify(req.body, null, 2));
+    console.log('User from token:', req.user?._id, req.userRole);
     if (!req.body.title) {
-      console.error('❌ Validation failed: title is required');
+      console.error('Validation failed: title is required');
       return res.status(400).json({ error: 'Title is required' });
     }
     if (!req.body.artist) {
-      console.error('❌ Validation failed: artist is required');
+      console.error('Validation failed: artist is required');
       return res.status(400).json({ error: 'Artist ID is required' });
     }
     if (!req.body.date) {
-      console.error('❌ Validation failed: date is required');
+      console.error('Validation failed: date is required');
       return res.status(400).json({ error: 'Date is required' });
     }
     if (!req.body.price) {
-      console.error('❌ Validation failed: price is required');
+      console.error('Validation failed: price is required');
       return res.status(400).json({ error: 'Price is required' });
     }
     
     const workshop = await Workshop.create(req.body);
-    console.log('✅ Workshop created successfully:', {
+    console.log('Workshop created successfully:', {
       id: workshop._id,
       title: workshop.title
     });
     
     res.status(201).json(workshop);
   } catch (err) {
-    console.error('❌ Workshop creation error:', err.message);
+    console.error('Workshop creation error:', err.message);
     console.error('Error name:', err.name);
     if (err.name === 'ValidationError') {
       console.error('Validation errors:', err.errors);
@@ -64,17 +60,12 @@ export const createWorkshop = async (req, res) => {
   }
 };
 
-// READ - List all workshops
 export const getAllWorkshops = async (req, res) => {
   try {
-    // Support optional query params: category (matches artist.category or specialties), page, limit
     const { category, page = 1, limit = 20, mode } = req.query
 
-    // If category provided, search in both workshop fields and artist fields
     if (category) {
-      const match = category.toString().toLowerCase()
-      
-      // Find artists whose category or specialties match
+      const match = category.toString().toLowerCase();
       const Artist = (await import("../models/Artist.js")).default
       const artists = await Artist.find({
         $or: [
@@ -85,9 +76,8 @@ export const getAllWorkshops = async (req, res) => {
 
       const artistIds = artists.map(a => a._id)
       
-      console.log(`🔍 [getAllWorkshops] category="${category}", found ${artists.length} artists`)
+      console.log(`[getAllWorkshops] category="${category}", found ${artists.length} artists`);
       
-      // Build query
       const categoryRegex = new RegExp(match, 'i')
       const filter = {
         $or: [
@@ -104,11 +94,11 @@ export const getAllWorkshops = async (req, res) => {
         .skip((page - 1) * limit)
         .limit(Number(limit))
 
-      console.log(`✅ [getAllWorkshops] Returning ${workshops.length} workshops`)
+      console.log(`[getAllWorkshops] Returning ${workshops.length} workshops`)
       return res.json(workshops)
     }
 
-    // No category: return paginated workshops (optionally filter by mode)
+
     const filter = {}
     if (mode) filter.mode = mode
     const workshops = await Workshop.find(filter)
@@ -123,16 +113,13 @@ export const getAllWorkshops = async (req, res) => {
   }
 };
 
-// READ - Get workshops by category via route param (helper for frontend explore pages)
 export const getWorkshopsByCategory = async (req, res) => {
   try {
     const { categoryId } = req.params
     const { page = 1, limit = 20, mode } = req.query
     if (!categoryId) return res.status(400).json({ error: 'categoryId required' })
 
-    const match = categoryId.toString().toLowerCase()
-    
-    // Find artists whose category or specialties match
+    const match = categoryId.toString().toLowerCase();
     const Artist = (await import("../models/Artist.js")).default
     const artists = await Artist.find({
       $or: [
@@ -143,14 +130,10 @@ export const getWorkshopsByCategory = async (req, res) => {
 
     const artistIds = artists.map(a => a._id)
     
-    console.log(`🔍 Searching for category: "${categoryId}" (match: "${match}")`)
-    console.log(`👥 Found ${artists.length} matching artists`)
+    console.log(`Searching for category: "${categoryId}" (match: "${match}")`)
+    console.log(`Found ${artists.length} matching artists`);
     
-    // Build MongoDB query - Find workshops where:
-    // 1. Workshop category field matches (case-insensitive) OR
-    // 2. Workshop subcategory field matches (case-insensitive) OR  
-    // 3. Artist is in the list of artists whose category/specialties match
-    const categoryRegex = new RegExp(match, 'i')
+    const categoryRegex = new RegExp(match, 'i');
     
     const filter = {
       $or: [
@@ -162,8 +145,8 @@ export const getWorkshopsByCategory = async (req, res) => {
     
     if (mode) filter.mode = mode
 
-    console.log(`🔎 artistIds:`, artistIds.map(id => id.toString()))
-    console.log(`🔎 regex pattern:`, categoryRegex.toString())
+    console.log(`artistIds:`, artistIds.map(id => id.toString()))
+    console.log(`regex pattern:`, categoryRegex.toString())
 
     // Test: First try to find the specific workshop directly
     const testWorkshop = await Workshop.findById('692034205ac3466d6639143b')
@@ -204,9 +187,8 @@ export const getWorkshopsByCategory = async (req, res) => {
       titles: testFullQuery.map(w => w.title)
     }
     
-    console.log('\ud83e\uddea TEST RESULTS:', JSON.stringify(testResults, null, 2))
+    console.log('TEST RESULTS:', JSON.stringify(testResults, null, 2));
     
-    // TEMPORARY: Return test results if debug=true
     if (req.query.debug === 'true') {
       return res.json({ debug: testResults, artistIds: artistIds.map(id => id.toString()), filter })
     }
@@ -215,29 +197,27 @@ export const getWorkshopsByCategory = async (req, res) => {
       .populate('artist')
       .sort({ date: -1 })
 
-    // Log each workshop and why it matched
     workshops.forEach(w => {
       const matchesCategory = w.category && new RegExp(match, 'i').test(w.category)
       const matchesSubcategory = w.subcategory && new RegExp(match, 'i').test(w.subcategory)
       const matchesArtist = artistIds.some(id => id.toString() === w.artist._id.toString())
-      console.log(`📄 ${w.title}: cat=${matchesCategory}, subcat=${matchesSubcategory}, artist=${matchesArtist}`)
+      console.log(`${w.title}: cat=${matchesCategory}, subcat=${matchesSubcategory}, artist=${matchesArtist}`)
     })
 
-    // Apply pagination after getting all results
+
     const startIndex = (page - 1) * limit
     const endIndex = startIndex + Number(limit)
     const paginatedWorkshops = workshops.slice(startIndex, endIndex)
 
-    console.log(`✅ Found ${workshops.length} total workshops, returning ${paginatedWorkshops.length} (page ${page})`)
-    console.log(`📝 Workshop titles:`, workshops.map(w => w.title))
+    console.log(`Found ${workshops.length} total workshops, returning ${paginatedWorkshops.length} (page ${page})`)
+    console.log(`Workshop titles:`, workshops.map(w => w.title))
     res.json(paginatedWorkshops)
   } catch (err) {
-    console.error('❌ Error in getWorkshopsByCategory:', err)
+    console.error('Error in getWorkshopsByCategory:', err)
     res.status(500).json({ error: err.message })
   }
 }
 
-// READ - Get single workshop by ID
 export const getWorkshopById = async (req, res) => {
   try {
     const workshop = await Workshop.findById(req.params.id).populate("artist");
@@ -248,7 +228,6 @@ export const getWorkshopById = async (req, res) => {
   }
 };
 
-// UPDATE - Update workshop
 export const updateWorkshop = async (req, res) => {
   try {
     const workshop = await Workshop.findByIdAndUpdate(
@@ -263,14 +242,13 @@ export const updateWorkshop = async (req, res) => {
   }
 };
 
-// MIGRATION - Fix category field indexing for all workshops
 export const fixCategoryIndexing = async (req, res) => {
   try {
-    console.log('🔧 Starting category field migration...')
+    console.log('Starting category field migration...');
     
     // Get all workshops
     const workshops = await Workshop.find({})
-    console.log(`📊 Found ${workshops.length} workshops`)
+    console.log(`Found ${workshops.length} workshops`)
     
     let fixed = 0
     for (const workshop of workshops) {
@@ -281,9 +259,8 @@ export const fixCategoryIndexing = async (req, res) => {
       }
     }
     
-    console.log(`✅ Migration complete: ${fixed} workshops re-saved`)
+    console.log(`Migration complete: ${fixed} workshops re-saved`);
     
-    // Test if it worked
     const testDance = await Workshop.find({ category: /dance/i })
     const testPainting = await Workshop.find({ category: /painting/i })
     
@@ -297,12 +274,11 @@ export const fixCategoryIndexing = async (req, res) => {
       }
     })
   } catch (err) {
-    console.error('❌ Migration error:', err)
+    console.error('Migration error:', err)
     res.status(500).json({ error: err.message })
   }
 }
 
-// DELETE - Delete workshop
 export const deleteWorkshop = async (req, res) => {
   try {
     const workshop = await Workshop.findByIdAndDelete(req.params.id);
@@ -313,7 +289,6 @@ export const deleteWorkshop = async (req, res) => {
   }
 };
 
-// UPDATE - Update workshop image
 export const updateWorkshopImage = async (req, res) => {
   try {
     const { imageUrl, thumbnailUrl } = req.body;
@@ -340,24 +315,18 @@ export const updateWorkshopImage = async (req, res) => {
   }
 };
 
-// DELETE - Delete workshop image
 export const deleteWorkshopImage = async (req, res) => {
   try {
     const workshop = await Workshop.findById(req.params.id);
     if (!workshop) return res.status(404).json({ error: "Workshop not found" });
-    
-    // Delete from Cloudinary if URL exists
     if (workshop.imageUrl) {
       try {
         await deleteFromCloudinary(workshop.imageUrl);
-        console.log('✅ Workshop image deleted from Cloudinary');
+        console.log('Workshop image deleted from Cloudinary');
       } catch (cloudinaryError) {
-        console.error('⚠️ Failed to delete from Cloudinary:', cloudinaryError);
-        // Continue anyway to update database
+        console.error('Failed to delete from Cloudinary:', cloudinaryError);
       }
     }
-    
-    // Update database
     workshop.imageUrl = undefined;
     workshop.thumbnailUrl = undefined;
     await workshop.save();

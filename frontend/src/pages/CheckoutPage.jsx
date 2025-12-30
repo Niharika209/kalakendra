@@ -7,8 +7,6 @@ import { API_BASE_URL, RAZORPAY_KEY_ID } from '../config/api.js'
 
 const API_URL = API_BASE_URL
 
-// Cart is persisted in localStorage under key 'cart'. Start with stored cart or empty array.
-
 function CheckoutPage() {
   const navigate = useNavigate()
   const { user, accessToken } = useAuth()
@@ -68,21 +66,13 @@ function CheckoutPage() {
     setLoading(true)
 
     try {
-      // Create Razorpay order via backend
       const response = await axios.post(`${API_URL}/payment/create-order`, {
         amount: total,
         currency: 'INR',
       })
-
-      console.log('ORDER DATA:', response.data);
       
       const { id: order_id, amount, currency } = response.data
 
-      console.log('Razorpay Key:', RAZORPAY_KEY_ID);
-      console.log('Order ID:', order_id);
-      console.log('Amount:', amount, 'Currency:', currency);
-
-      // Set up Razorpay options - Minimal config for maximum compatibility
       const options = {
         key: RAZORPAY_KEY_ID,
         amount: amount,
@@ -91,10 +81,7 @@ function CheckoutPage() {
         description: `Workshop Enrollment - ${cartItems.length} workshop(s)`,
         order_id: order_id,
         handler: async (response) => {
-          console.log('Payment successful:', response);
-
           try {
-            // Create booking records in database for each workshop
             const bookingPromises = cartItems.map(async (item) => {
               try {
                 const bookingData = {
@@ -107,24 +94,19 @@ function CheckoutPage() {
                   orderId: response.razorpay_order_id
                 };
                 
-                console.log('Creating booking for workshop:', item.title, 'Quantity:', item.quantity);
                 const bookingResponse = await axios.post(
                   `${API_URL}/bookings`, 
                   bookingData,
                   { headers: { Authorization: `Bearer ${accessToken}` } }
                 );
-                console.log('Booking created:', bookingResponse.data);
                 return bookingResponse.data;
               } catch (error) {
-                console.error('Error creating booking for workshop:', item.title, error);
                 throw error;
               }
             });
 
             await Promise.all(bookingPromises);
-            console.log('✅ All bookings created successfully');
 
-            // Also save to localStorage as backup
             const existingWorkshops = JSON.parse(localStorage.getItem(`workshops_${user.email}`) || '[]');
             const newEnrolledWorkshops = cartItems.map(item => ({
               ...item,
@@ -139,7 +121,6 @@ function CheckoutPage() {
             localStorage.removeItem('cart');
             setCartItems([]);
           } catch (e) {
-            console.error('Error processing enrollment:', e);
             alert('Payment successful but there was an error saving your enrollment. Please contact support.');
           }
 
@@ -158,33 +139,26 @@ function CheckoutPage() {
           escape: true,
           ondismiss: () => {
             setLoading(false);
-            console.log('Checkout closed');
           }
         }
       }
 
-      console.log('Razorpay options:', options);
-
       const paymentObject = new window.Razorpay(options)
       paymentObject.on('payment.failed', function (response) {
-        console.error('Payment failed:', response.error)
         alert(`Payment failed: ${response.error.description || 'Please try again'}`)
         setLoading(false)
       })
       paymentObject.open()
     } catch (error) {
-      console.error('Payment initiation failed:', error)
       alert('Failed to initiate payment. Please try again.')
       setLoading(false)
     }
   }
 
-  // Persist cart to localStorage whenever it changes
   useEffect(() => {
     try {
       localStorage.setItem('cart', JSON.stringify(cartItems))
     } catch (e) {
-      // ignore storage errors
     }
   }, [cartItems])
 

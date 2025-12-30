@@ -41,7 +41,6 @@ function ProfilePage() {
   }, [user, navigate])
 
   useEffect(() => {
-    // Load enrolled and completed workshops from localStorage
     const loadWorkshops = () => {
       try {
         const userWorkshops = localStorage.getItem(`workshops_${user?.email}`)
@@ -54,7 +53,6 @@ function ProfilePage() {
           setCompletedWorkshops([])
         }
       } catch (e) {
-        console.error('Error loading workshops:', e)
       }
     }
 
@@ -62,9 +60,7 @@ function ProfilePage() {
       try {
         const response = await axios.get(`${API_BASE_URL}/demo-bookings/learner/${user.email}`)
         setDemoBookings(response.data)
-        console.log('✅ Loaded', response.data.length, 'demo bookings')
       } catch (error) {
-        console.error('Error fetching demo bookings:', error)
       }
     }
 
@@ -74,11 +70,9 @@ function ProfilePage() {
     }
   }, [user])
 
-  // Listen for tab changes from navigation state
   useEffect(() => {
     if (location.state?.tab) {
       setActiveTab(location.state.tab)
-      // Clear the state after using it
       window.history.replaceState({}, document.title)
     }
   }, [location])
@@ -93,68 +87,46 @@ function ProfilePage() {
       setEnrolledWorkshops(updatedWorkshops.filter(w => !w.completed))
       setCompletedWorkshops(updatedWorkshops.filter(w => w.completed))
     } catch (e) {
-      // ignore
     }
   }
 
   const handleSaveProfile = () => {
     if (!user) return
-    // TODO: Implement API call to update user profile
     const updated = { ...user, name: editName, email: editEmail }
-    console.log('Profile update:', updated)
     setIsEditing(false)
   }
 
   const handleImageUpload = async (e) => {
-    console.log('🎯 handleImageUpload called')
     const file = e.target.files?.[0]
-    console.log('📁 Selected file:', file)
     if (!file) {
-      console.log('❌ No file selected')
       return
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
-      console.log('❌ Invalid file type:', file.type)
       alert('Please select an image file')
       return
     }
 
-    // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      console.log('❌ File too large:', file.size)
       alert('Image size should be less than 5MB')
       return
     }
-
-    console.log('✅ File validation passed')
     
     try {
       setUploading(true)
       
-      console.log('🔄 Starting image upload...')
-      // Upload to Cloudinary
       const uploadResult = await uploadImage(file)
-      console.log('✅ Image uploaded to Cloudinary:', uploadResult)
       
-      // Update learner profile with new image URL
       if (user.id || user._id) {
         const userId = user.id || user._id
-        console.log('🔄 Updating learner profile with image:', userId, uploadResult.url)
         const result = await updateLearnerProfileImage(userId, uploadResult.url)
-        console.log('✅ Profile image updated in database:', result)
         setProfileImage(uploadResult.url)
-        console.log('✅ Local state updated')
         updateUser({ profileImage: uploadResult.url })
-        console.log('✅ User context updated with profileImage:', uploadResult.url)
         alert('Profile image updated successfully!')
       } else {
-        console.error('❌ No user.id or user._id found:', user)
         alert('Error: User ID not found')
       }
     } catch (error) {
-      console.error('❌ Upload error:', error)
       alert('Failed to upload image: ' + error.message)
     } finally {
       setUploading(false)
@@ -173,7 +145,6 @@ function ProfilePage() {
       updateUser({ profileImage: null })
       alert('Profile image deleted successfully!')
     } catch (error) {
-      console.error('Delete error:', error)
       alert('Failed to delete image: ' + error.message)
     } finally {
       setUploading(false)
@@ -206,7 +177,6 @@ function ProfilePage() {
 
     setIsSubmitting(true)
     try {
-      // API call to submit review
       const response = await axios.post(`${API_BASE_URL}/reviews`, {
         workshopId: selectedWorkshop.id,
         rating: reviewData.rating,
@@ -215,9 +185,6 @@ function ProfilePage() {
         learnerId: user._id || user.id
       })
 
-      console.log('Review submitted:', response.data)
-
-      // Update workshop to mark as reviewed
       const userWorkshops = JSON.parse(localStorage.getItem(`workshops_${user.email}`) || '[]')
       const updatedWorkshops = userWorkshops.map(w => 
         w.id === selectedWorkshop.id ? { ...w, reviewed: true } : w
@@ -228,7 +195,6 @@ function ProfilePage() {
       handleCloseReviewModal()
       alert('Thank you for your review!')
     } catch (error) {
-      console.error('Error submitting review:', error)
       const errorMsg = error.response?.data?.error || 'Failed to submit review. Please try again.'
       alert(errorMsg)
     } finally {

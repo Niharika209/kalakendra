@@ -34,7 +34,6 @@ function WorkshopDetailPage() {
     return () => { cancelled = true }
   }, [id])
 
-  // Check if user is already enrolled in this workshop
   useEffect(() => {
     if (user?.email && id) {
       try {
@@ -45,7 +44,6 @@ function WorkshopDetailPage() {
           setEnrolledWorkshop(enrolled || null)
         }
       } catch (e) {
-        console.error('Error checking enrollment:', e)
       }
     }
   }, [user, id, workshop])
@@ -72,7 +70,6 @@ function WorkshopDetailPage() {
       localStorage.setItem('cart', JSON.stringify(cart))
       navigate('/checkout')
     } catch (e) {
-      console.warn('Could not add to cart', e)
       navigate('/checkout')
     }
   }
@@ -104,7 +101,6 @@ function WorkshopDetailPage() {
         navigate('/profile', { state: { tab: 'completed' } })
       }
     } catch (e) {
-      console.error('Error marking complete:', e)
       alert('Failed to mark workshop as complete. Please try again.')
     }
   }

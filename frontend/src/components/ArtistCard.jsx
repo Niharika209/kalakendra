@@ -4,9 +4,9 @@ import karanImage from '../assets/karan.png'
 import vikramImage from '../assets/vikram.png'
 
 function ArtistCard({ artist, index }) {
-  // backend fields: thumbnailUrl, imageUrl, rating, reviewsCount, slug, _id
   const placeholder = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f59e0b" width="400" height="300"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="20" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E'
-  // Use local assets for seeded entries (Asha, Karan, Vikram), then prefer API thumbnails/images, then placeholder
+  
+  // Image fallbacks
   let overrideImage = null
   if (artist) {
     if (artist.name === 'Asha Patel' || artist.slug === 'asha-patel') overrideImage = ashaImage

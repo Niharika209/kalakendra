@@ -30,11 +30,9 @@ const reviewSchema = new mongoose.Schema({
   reviewerName: { 
     type: String, 
     required: true 
-  },
-  // Prevent duplicate reviews from same learner for same workshop
+  }
 }, { timestamps: true });
 
-// Create compound index to ensure one review per learner per workshop
 reviewSchema.index({ workshop: 1, learner: 1 }, { unique: true });
 
 export default mongoose.model("Review", reviewSchema);

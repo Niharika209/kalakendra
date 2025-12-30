@@ -12,7 +12,6 @@ function SubcategoryDetailPage() {
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Convert URL slug back to readable name
   const displayName = subcategoryName
     ? subcategoryName.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
     : ''
@@ -22,14 +21,11 @@ function SubcategoryDetailPage() {
     async function fetchArtists() {
       setLoading(true)
       try {
-          // Fetch workshops for this subcategory (backend will match artist category/specialties)
-          // Convert slug back to readable text for matching (e.g. classical-dance -> Classical Dance)
           const decoded = (subcategoryName || '').replace(/-/g, ' ')
           const resp = await axios.get(`${API_BASE_URL}/workshops?category=${encodeURIComponent(decoded)}`)
           if (cancelled) return
           const all = Array.isArray(resp.data) ? resp.data : []
 
-          // Keep workshops list; frontend will show workshops or a 'no workshops' message
           setWorkshops(all)
       } catch (err) {
         if (!cancelled) setError(err?.response?.data?.error || err.message || 'Could not load artists')
@@ -42,7 +38,6 @@ function SubcategoryDetailPage() {
     return () => { cancelled = true }
   }, [categoryId, subcategoryName])
 
-  // Filter workshops based on search term
   const filteredWorkshops = workshops.filter(w => {
     if (!searchTerm) return true
     const search = searchTerm.toLowerCase()

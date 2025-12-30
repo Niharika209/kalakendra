@@ -38,7 +38,7 @@ function ArtistProfileDashboard() {
     offersRecorded: false,
     recordedSessionUrl: '',
     demoDescription: '',
-    liveSessionSlots: [] // Array of {date, time, available}
+    liveSessionSlots: []
   })
   const [uploadingRecording, setUploadingRecording] = useState(false)
   const [newSlotDate, setNewSlotDate] = useState('')
@@ -62,18 +62,14 @@ function ArtistProfileDashboard() {
   useEffect(() => {
     if (!user) return
     
-    // Fetch artist data and workshops from API
     const fetchArtistData = async () => {
       try {
         setLoading(true)
-        // Get artist profile
         const artistResponse = await axios.get(`${API_URL}/artists/email/${user.email}`)
         const artist = artistResponse.data
         setArtistData(artist)
         
-        // Load demo settings if they exist
         if (artist.demoSessionSettings) {
-          console.log('Loading demo settings from backend:', artist.demoSessionSettings)
           setDemoSettings({
             enabled: artist.demoSessionSettings.enabled || false,
             offersLive: artist.demoSessionSettings.offersLive || false,
@@ -82,13 +78,10 @@ function ArtistProfileDashboard() {
             demoDescription: artist.demoSessionSettings.demoDescription || '',
             liveSessionSlots: artist.demoSessionSettings.liveSessionSlots || []
           })
-          console.log('Loaded slots:', artist.demoSessionSettings.liveSessionSlots)
         }
         
-        // Get artist's workshops
         const workshopsResponse = await axios.get(`${API_URL}/workshops/artist/${artist._id}`)
         setMyWorkshops(workshopsResponse.data)
-        console.log('✅ Loaded', workshopsResponse.data.length, 'workshops')
       } catch (error) {
         console.error('Error fetching artist data:', error)
       } finally {
@@ -99,14 +92,12 @@ function ArtistProfileDashboard() {
     fetchArtistData()
   }, [user])
 
-  // Fetch demo bookings when demo sessions tab is active
   useEffect(() => {
     if (activeTab === 'demoSessions' && artistData?._id) {
       fetchDemoBookings()
     }
   }, [activeTab, artistData])
 
-  // Refresh workshops when workshops tab is active
   useEffect(() => {
     if (activeTab === 'workshops' && artistData?._id) {
       fetchWorkshops()
@@ -119,7 +110,6 @@ function ArtistProfileDashboard() {
     try {
       const response = await axios.get(`${API_URL}/workshops/artist/${artistData._id}`)
       setMyWorkshops(response.data)
-      console.log('✅ Refreshed workshops, total enrolled:', response.data.reduce((sum, w) => sum + (w.enrolled || 0), 0))
     } catch (error) {
       console.error('Error fetching workshops:', error)
     }
@@ -132,7 +122,6 @@ function ArtistProfileDashboard() {
       setLoadingBookings(true)
       const response = await axios.get(`${API_URL}/demo-bookings/artist/${artistData._id}`)
       setDemoBookings(response.data)
-      console.log('✅ Loaded', response.data.length, 'demo bookings')
     } catch (error) {
       console.error('Error fetching demo bookings:', error)
     } finally {
@@ -142,7 +131,6 @@ function ArtistProfileDashboard() {
 
   const handleSaveProfile = () => {
     if (!user) return
-    // TODO: Implement API call to update artist profile
     const updated = { 
       ...user, 
       name: editName, 
@@ -150,7 +138,6 @@ function ArtistProfileDashboard() {
       bio: editBio,
       speciality: editSpeciality 
     }
-    console.log('Profile update:', updated)
     setIsEditing(false)
   }
 
@@ -162,7 +149,6 @@ function ArtistProfileDashboard() {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       })
       setMyWorkshops(myWorkshops.filter(w => w._id !== workshopId))
-      console.log('✅ Workshop deleted')
     } catch (error) {
       console.error('Error deleting workshop:', error)
       alert('Failed to delete workshop')
@@ -240,17 +226,13 @@ function ArtistProfileDashboard() {
       setUploadingGallery(true)
       const uploadResult = await uploadMultipleImages(files)
       
-      console.log('Upload result:', uploadResult)
-      
       if (artistData?._id) {
         const mediaItems = uploadResult.files.map((f, idx) => ({
           url: f.url,
           type: files[idx].type.startsWith('video/') ? 'video' : 'image'
         }))
-        console.log('Media items to add:', mediaItems)
         
         const result = await addToArtistGallery(artistData._id, mediaItems)
-        console.log('Gallery update result:', result)
         
         setArtistData({ ...artistData, gallery: result.gallery })
         const imageCount = mediaItems.filter(m => m.type === 'image').length
@@ -374,7 +356,7 @@ function ArtistProfileDashboard() {
                       <p className="text-amber-700 mb-2">{user.email}</p>
                       <div className="flex gap-2 items-center mb-2">
                         <span className="inline-block px-3 py-1 bg-purple-100 text-purple-900 rounded-full text-sm font-medium">
-                          🎨 Artist
+                          Artist
                         </span>
                         {user.speciality && (
                           <span className="inline-block px-3 py-1 bg-amber-100 text-amber-900 rounded-full text-sm">
@@ -684,13 +666,6 @@ function ArtistProfileDashboard() {
                   </label>
                 </div>
 
-                {(() => {
-                  console.log('Gallery check - artistData:', artistData)
-                  console.log('Gallery array:', artistData?.gallery)
-                  console.log('Gallery length:', artistData?.gallery?.length)
-                  return null
-                })()}
-
                 {!artistData?.gallery || artistData.gallery.length === 0 ? (
                   <div className="text-center py-12">
                     <svg className="w-16 h-16 text-purple-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -830,9 +805,6 @@ function ArtistProfileDashboard() {
                                       available: true
                                     }
                                     const updatedSlots = [...(demoSettings.liveSessionSlots || []), newSlot]
-                                    console.log('Adding new slot:', newSlot)
-                                    console.log('Current slots:', demoSettings.liveSessionSlots)
-                                    console.log('Updated slots:', updatedSlots)
                                     
                                     setDemoSettings({
                                       ...demoSettings,
@@ -955,14 +927,6 @@ function ArtistProfileDashboard() {
                           <button
                             onClick={async () => {
                               try {
-                                console.log('Saving demo settings...')
-                                console.log('Artist ID:', artistData._id)
-                                console.log('Settings to save:', demoSettings)
-                                console.log('Live slots in settings:', demoSettings.liveSessionSlots)
-                                console.log('Live slots count:', demoSettings.liveSessionSlots?.length || 0)
-                                console.log('API URL:', `${API_URL}/artists/${artistData._id}`)
-                                console.log('Access Token:', accessToken ? 'Present' : 'Missing')
-                                
                                 if (!artistData?._id) {
                                   alert('Artist ID is missing. Please refresh the page.')
                                   return
@@ -974,9 +938,6 @@ function ArtistProfileDashboard() {
                                   { headers: { Authorization: `Bearer ${accessToken}` } }
                                 )
                                 
-                                console.log('Save response:', response.data)
-                                console.log('Updated demo settings:', response.data.demoSessionSettings)
-                                console.log('Live slots saved:', response.data.demoSessionSettings?.liveSessionSlots)
                                 setArtistData(response.data)
                                 setDemoSettings(response.data.demoSessionSettings || {
                                   enabled: false,
@@ -988,9 +949,6 @@ function ArtistProfileDashboard() {
                                 })
                                 alert('Demo session settings saved successfully!')
                               } catch (error) {
-                                console.error('Error saving demo settings:', error)
-                                console.error('Error response:', error.response?.data)
-                                console.error('Error status:', error.response?.status)
                                 alert(`Failed to save settings: ${error.response?.data?.error || error.message}`)
                               }
                             }}

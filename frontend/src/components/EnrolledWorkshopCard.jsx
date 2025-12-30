@@ -26,7 +26,6 @@ function EnrolledWorkshopCard({ workshop }) {
     <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 overflow-hidden border border-amber-100/50">
       
       <div className="flex p-6 gap-6">
-        {/* Left: Enhanced Image with overlay */}
         <div className="relative shrink-0 w-48 h-32 rounded-xl overflow-hidden shadow-md group-hover:shadow-xl transition-shadow duration-500">
           {workshop.image ? (
             <>

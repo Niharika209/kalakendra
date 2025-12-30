@@ -1,10 +1,3 @@
-/**
- * SearchResultsPage Component
- * 
- * Unified search results page for artists and workshops
- * Features: Filters panel, results grid, pagination, infinite scroll, sorting
- */
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
@@ -17,11 +10,9 @@ const SearchResultsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   
-  // Get initial params from URL
   const initialQuery = searchParams.get('q') || '';
   const initialType = searchParams.get('type') || 'all';
   
-  // State
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [searchType, setSearchType] = useState(initialType);
   const [filters, setFilters] = useState({});
@@ -31,9 +22,8 @@ const SearchResultsPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('relevance');
-  const [paginationMode, setPaginationMode] = useState('pagination'); // 'pagination' or 'infinite'
+  const [paginationMode, setPaginationMode] = useState('pagination');
   
-  // Pagination state
   const [artistPage, setArtistPage] = useState(1);
   const [workshopPage, setWorkshopPage] = useState(1);
   const [artistTotalPages, setArtistTotalPages] = useState(1);
@@ -41,11 +31,9 @@ const SearchResultsPage = () => {
   const [hasMoreArtists, setHasMoreArtists] = useState(false);
   const [hasMoreWorkshops, setHasMoreWorkshops] = useState(false);
   
-  // UI state
   const [showFilters, setShowFilters] = useState(true);
-  const [activeTab, setActiveTab] = useState('all'); // 'all', 'artists', 'workshops'
+  const [activeTab, setActiveTab] = useState('all');
   
-  // Infinite scroll ref
   const observer = useRef();
   const lastArtistRef = useCallback(node => {
     if (isLoading) return;
@@ -69,7 +57,6 @@ const SearchResultsPage = () => {
     if (node) observer.current.observe(node);
   }, [isLoading, hasMoreWorkshops, paginationMode]);
 
-  // Perform search
   const performSearch = async (isLoadMore = false) => {
     if (!searchQuery && Object.keys(filters).length === 0) {
       return;
@@ -86,7 +73,6 @@ const SearchResultsPage = () => {
         limit: 12
       };
 
-      // Search artists
       if (searchType === 'all' || searchType === 'artists') {
         const artistParams = { 
           ...searchParams, 
@@ -108,7 +94,6 @@ const SearchResultsPage = () => {
         }
       }
 
-      // Search workshops
       if (searchType === 'all' || searchType === 'workshops') {
         const workshopParams = { 
           ...searchParams, 
@@ -130,23 +115,20 @@ const SearchResultsPage = () => {
         }
       }
     } catch (err) {
-      console.error('Search error:', err);
       setError('Failed to fetch search results. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Initial search on mount and when params change
   useEffect(() => {
     if (artistPage === 1 && workshopPage === 1) {
       performSearch(false);
     } else {
-      performSearch(true); // Load more
+      performSearch(true);
     }
   }, [searchQuery, filters, sortBy, artistPage, workshopPage]);
 
-  // Update URL when search changes
   useEffect(() => {
     const params = new URLSearchParams();
     if (searchQuery) params.set('q', searchQuery);
@@ -154,7 +136,6 @@ const SearchResultsPage = () => {
     setSearchParams(params);
   }, [searchQuery, searchType]);
 
-  // Handle filter change
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
     setArtistPage(1);
@@ -163,7 +144,6 @@ const SearchResultsPage = () => {
     setWorkshopResults([]);
   };
 
-  // Handle filter reset
   const handleFilterReset = () => {
     setFilters({});
     setArtistPage(1);
@@ -172,7 +152,6 @@ const SearchResultsPage = () => {
     setWorkshopResults([]);
   };
 
-  // Handle sort change
   const handleSortChange = (newSort) => {
     setSortBy(newSort);
     setArtistPage(1);
@@ -181,7 +160,6 @@ const SearchResultsPage = () => {
     setWorkshopResults([]);
   };
 
-  // Handle pagination
   const handleArtistPageChange = (newPage) => {
     setArtistPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -192,7 +170,6 @@ const SearchResultsPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Total results count
   const totalResults = artistResults.length + workshopResults.length;
 
   return (

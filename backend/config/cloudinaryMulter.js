@@ -2,14 +2,10 @@ import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from './cloudinary.js';
 
-// Configure Cloudinary storage for multer with support for images and videos
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    // Determine resource type based on file mimetype
     const isVideo = file.mimetype.startsWith('video/');
-    
-    // Organize into subfolders based on upload type (can be set by route)
     const uploadType = req.uploadType || 'general';
     
     return {
@@ -25,7 +21,6 @@ const storage = new CloudinaryStorage({
   },
 });
 
-// File filter function
 const fileFilter = (req, file, cb) => {
   const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
   const allowedVideoTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/webm'];
@@ -37,13 +32,12 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Create multer upload middleware with reasonable size limits
 const upload = multer({ 
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB for images and videos
-    files: 10 // Max 10 files at once for multiple uploads
+    fileSize: 50 * 1024 * 1024,
+    files: 10
   },
 });
 

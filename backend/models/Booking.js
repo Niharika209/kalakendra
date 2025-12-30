@@ -11,12 +11,10 @@ const bookingSchema = new mongoose.Schema({
   paymentStatus: { type: String, enum: ["pending", "paid"], default: "paid" },
 }, { timestamps: true });
 
-// Post-save hook to update workshop availability
 bookingSchema.post('save', async function(doc) {
   try {
     const { searchSync } = await import('../services/searchSyncService.js');
     
-    // Update workshop seat availability
     if (doc.workshop) {
       await searchSync.updateWorkshopAvailability(doc.workshop);
     }
@@ -25,7 +23,6 @@ bookingSchema.post('save', async function(doc) {
   }
 });
 
-// Post-update hook (when booking is cancelled)
 bookingSchema.post('findOneAndUpdate', async function(doc) {
   try {
     if (doc && doc.workshop) {

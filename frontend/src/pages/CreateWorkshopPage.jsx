@@ -19,7 +19,6 @@ function CreateWorkshopPage() {
   const [uploading, setUploading] = useState(false)
   const [workshopImage, setWorkshopImage] = useState(null)
 
-  // Form state
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -50,17 +49,15 @@ function CreateWorkshopPage() {
     }
     
     if (user.role !== 'artist') {
-      navigate('/') // Only artists can create workshops
+      navigate('/')
       return
     }
 
-    // Fetch artist data
     const fetchArtistData = async () => {
       try {
         const response = await axios.get(`${API_URL}/artists/email/${user.email}`)
         setArtistData(response.data)
       } catch (err) {
-        console.error('Error fetching artist data:', err)
       }
     }
     fetchArtistData()
@@ -156,7 +153,6 @@ function CreateWorkshopPage() {
       setWorkshopImage(uploadResult.url)
       alert('Workshop image uploaded successfully!')
     } catch (error) {
-      console.error('Upload error:', error)
       alert('Failed to upload image: ' + error.message)
     } finally {
       setUploading(false)
@@ -164,11 +160,6 @@ function CreateWorkshopPage() {
   }
 
   const handleSubmit = async () => {
-    console.log('Submit clicked - Checking validation...')
-    console.log('User:', user)
-    console.log('AccessToken:', accessToken)
-    console.log('ArtistData:', artistData?._id)
-    
     if (!user) {
       setError('You must be logged in to create a workshop')
       return
@@ -215,8 +206,6 @@ function CreateWorkshopPage() {
         imageUrl: workshopImage || undefined,
         thumbnailUrl: workshopImage || undefined
       }
-
-      console.log('📤 Sending workshop data:', workshopData)
       
       await axios.post(`${API_URL}/workshops`, workshopData, {
         headers: {
@@ -224,18 +213,12 @@ function CreateWorkshopPage() {
         }
       })
       
-      console.log('✅ Workshop created successfully!')
       setSuccess(true)
       
-      // Redirect after success
       setTimeout(() => {
         navigate('/artist-dashboard')
       }, 2000)
     } catch (err) {
-      console.error('❌ Error creating workshop:', err)
-      console.error('Error response:', err.response?.data)
-      console.error('Error status:', err.response?.status)
-      console.error('Error message:', err.message)
       setError(err.response?.data?.error || err.response?.data?.message || 'Failed to create workshop. Please try again.')
     } finally {
       setLoading(false)
@@ -264,7 +247,7 @@ function CreateWorkshopPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-3xl font-bold text-green-900 mb-2">Workshop Created Successfully! 🎉</h2>
+            <h2 className="text-3xl font-bold text-green-900 mb-2">Workshop Created Successfully!</h2>
             <p className="text-green-700 mb-6">Redirecting you to your dashboard...</p>
           </div>
         </div>

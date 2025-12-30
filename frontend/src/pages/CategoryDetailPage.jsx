@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '../config/api.js'
 
-// All workshop data with subcategories
 const workshopData = {
   painting: {
     title: "Painting",
@@ -131,11 +130,9 @@ function CategoryDetailPage() {
     async function fetchWorkshops() {
       setLoading(true)
       try {
-        // Fetch all workshops by setting a high limit (or you can add pagination later)
         const resp = await axios.get(`${API_BASE_URL}/workshops/category/${categoryId}?limit=1000`)
         if (!cancelled) setWorkshops(Array.isArray(resp.data) ? resp.data : [])
       } catch (err) {
-        // If backend returns 404 (no workshops/resource), treat as empty list instead of showing raw error
         const status = err?.response?.status
         if (!cancelled && (status === 404 || status === 204)) {
           setWorkshops([])
@@ -152,7 +149,6 @@ function CategoryDetailPage() {
     return () => { cancelled = true }
   }, [categoryId, category])
 
-  // Filter workshops and subcategories based on search term
   const filteredWorkshops = workshops.filter(w => {
     if (!searchTerm) return true
     const search = searchTerm.toLowerCase()
@@ -237,7 +233,6 @@ function CategoryDetailPage() {
 
             {!loading && filteredWorkshops.length === 0 && !searchTerm && (
               <div className="py-12 text-center">
-                <div className="text-6xl mb-4">🎨</div>
                 <h3 className="text-2xl font-bold text-amber-900 mb-2">No Workshops Available Yet</h3>
                 <p className="text-amber-700">Check back soon for upcoming {category.title} workshops!</p>
               </div>

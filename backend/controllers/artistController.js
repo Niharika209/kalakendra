@@ -3,28 +3,26 @@ import Workshop from "../models/Workshop.js";
 import { deleteFromCloudinary } from "../utils/cloudinaryHelper.js";
 import { sortByRankingScore } from "../utils/artistSortHelper.js";
 
-// READ - Get artist by email
 export const getArtistByEmail = async (req, res) => {
   try {
     const email = req.params.email;
-    console.log('🔍 Fetching artist by email:', email);
+    console.log('Fetching artist by email:', email);
     
     const artist = await Artist.findOne({ email }).lean();
     
     if (!artist) {
-      console.log('❌ Artist not found for email:', email);
+      console.log('Artist not found for email:', email);
       return res.status(404).json({ error: "Artist not found" });
     }
 
-    console.log('✅ Artist found:', artist._id);
+    console.log('Artist found:', artist._id);
     res.json(artist);
   } catch (err) {
-    console.error('❌ Error fetching artist by email:', err);
+    console.error('Error fetching artist by email:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// CREATE - Signup a new artist
 export const createArtist = async (req, res) => {
   try {
     const artist = await Artist.create(req.body);
@@ -34,7 +32,6 @@ export const createArtist = async (req, res) => {
   }
 };
 
-// READ - List all artists
 export const getAllArtists = async (req, res) => {
   try {
     const artists = await Artist.find().lean();
@@ -45,7 +42,6 @@ export const getAllArtists = async (req, res) => {
   }
 };
 
-// READ - Get featured artists for landing page
 export const getFeaturedArtists = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 6;
@@ -60,12 +56,9 @@ export const getFeaturedArtists = async (req, res) => {
   }
 };
 
-// READ - Get single artist by ID
 export const getArtistById = async (req, res) => {
   try {
     const idOrSlug = req.params.id;
-
-    // Allow fetching by Mongo ID or slug
     let artist = null;
     if (/^[0-9a-fA-F]{24}$/.test(idOrSlug)) {
       artist = await Artist.findById(idOrSlug).lean();
@@ -75,17 +68,13 @@ export const getArtistById = async (req, res) => {
 
     if (!artist) return res.status(404).json({ error: "Artist not found" });
 
-    // Populate related workshops
     const workshops = await Workshop.find({ artist: artist._id }).select('title date time duration price enrolled location').lean();
-
-    // Return combined profile object
     res.json({ ...artist, workshops });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// UPDATE - Update artist profile
 export const updateArtist = async (req, res) => {
   try {
     console.log('=== UPDATE ARTIST REQUEST ===')
@@ -114,7 +103,6 @@ export const updateArtist = async (req, res) => {
   }
 };
 
-// DELETE - Delete artist
 export const deleteArtist = async (req, res) => {
   try {
     const artist = await Artist.findByIdAndDelete(req.params.id);
@@ -125,7 +113,6 @@ export const deleteArtist = async (req, res) => {
   }
 };
 
-// Artist login (basic)
 export const loginArtist = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -137,7 +124,6 @@ export const loginArtist = async (req, res) => {
   }
 };
 
-// UPDATE - Update artist profile image
 export const updateArtistProfileImage = async (req, res) => {
   try {
     const { imageUrl, thumbnailUrl } = req.body;
@@ -164,24 +150,18 @@ export const updateArtistProfileImage = async (req, res) => {
   }
 };
 
-// DELETE - Delete artist profile image
 export const deleteArtistProfileImage = async (req, res) => {
   try {
     const artist = await Artist.findById(req.params.id);
     if (!artist) return res.status(404).json({ error: "Artist not found" });
-    
-    // Delete from Cloudinary if URL exists
     if (artist.imageUrl) {
       try {
         await deleteFromCloudinary(artist.imageUrl);
-        console.log('✅ Image deleted from Cloudinary');
+        console.log('Image deleted from Cloudinary');
       } catch (cloudinaryError) {
-        console.error('⚠️ Failed to delete from Cloudinary:', cloudinaryError);
-        // Continue anyway to update database
+        console.error('Failed to delete from Cloudinary:', cloudinaryError);
       }
     }
-    
-    // Update database
     artist.imageUrl = undefined;
     artist.thumbnailUrl = undefined;
     await artist.save();
@@ -194,7 +174,6 @@ export const deleteArtistProfileImage = async (req, res) => {
   }
 };
 
-// UPDATE - Add media (images/videos) to artist gallery
 export const addToArtistGallery = async (req, res) => {
   try {
     const { mediaItems } = req.body;
@@ -220,7 +199,6 @@ export const addToArtistGallery = async (req, res) => {
   }
 };
 
-// DELETE - Remove media from artist gallery
 export const removeFromArtistGallery = async (req, res) => {
   try {
     const { mediaUrl } = req.body;
@@ -231,17 +209,12 @@ export const removeFromArtistGallery = async (req, res) => {
 
     const artist = await Artist.findById(req.params.id);
     if (!artist) return res.status(404).json({ error: "Artist not found" });
-    
-    // Delete from Cloudinary
     try {
       await deleteFromCloudinary(mediaUrl);
-      console.log('✅ Gallery item deleted from Cloudinary');
+      console.log('Gallery item deleted from Cloudinary');
     } catch (cloudinaryError) {
-      console.error('⚠️ Failed to delete from Cloudinary:', cloudinaryError);
-      // Continue anyway to update database
+      console.error('Failed to delete from Cloudinary:', cloudinaryError);
     }
-    
-    // Remove from database
     artist.gallery = artist.gallery.filter(item => item.url !== mediaUrl);
     await artist.save();
     

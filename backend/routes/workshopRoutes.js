@@ -81,19 +81,14 @@ router.post("/debug/fix-workshop/:id", async (req, res) => {
 // MIGRATION endpoint - fix all workshops
 router.post("/migrate/fix-categories", fixCategoryIndexing)
 
-// CREATE - Create workshop (requires authentication)
 router.post("/", protect, createWorkshop);
 
-// READ - Get all workshops
 router.get("/", getAllWorkshops);
 
-// READ - Get workshops by category slug or name (e.g. /api/workshops/category/dance)
 router.get("/category/:categoryId", getWorkshopsByCategory);
 
-// READ - Get workshops by artist ID (MUST come before /:id to avoid conflict)
 router.get("/artist/:artistId", getWorkshopsByArtist);
 
-// READ - Get single workshop by ID (MUST come AFTER specific routes)
 router.get("/:id", getWorkshopById);
 
 // UPDATE - Update workshop (requires authentication)

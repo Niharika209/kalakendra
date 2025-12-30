@@ -33,7 +33,6 @@ const demoBookingSchema = new mongoose.Schema({
   confirmedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-// Indexes for fast queries
 demoBookingSchema.index({ artistId: 1, createdAt: -1 });
 demoBookingSchema.index({ learnerEmail: 1, createdAt: -1 });
 demoBookingSchema.index({ status: 1 });
